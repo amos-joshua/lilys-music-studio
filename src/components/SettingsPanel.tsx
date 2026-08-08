@@ -1,49 +1,12 @@
 import { ANIMALS, TREAT_SETS } from "../config/theme";
-import { DEFAULT_SETTINGS } from "../config/settings";
+import { DEFAULT_SETTINGS, tempoWord } from "../config/settings";
 import type { Settings } from "../config/settings";
+import { Slider } from "./Slider";
 
 interface Props {
   settings: Settings;
   onChange: (patch: Partial<Settings>) => void;
   onClose: () => void;
-}
-
-function Slider({
-  label,
-  value,
-  min,
-  max,
-  step = 1,
-  suffix = "",
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step?: number;
-  suffix?: string;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <label className="field">
-      <span>
-        {label}
-        <em>
-          {value}
-          {suffix}
-        </em>
-      </span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-      />
-    </label>
-  );
 }
 
 function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
@@ -66,7 +29,15 @@ export function SettingsPanel({ settings, onChange, onClose }: Props) {
       </header>
 
       <h3>Feel</h3>
-      <Slider label="Tempo" value={settings.bpm} min={50} max={150} suffix=" bpm" onChange={(v) => onChange({ bpm: v })} />
+      <Slider
+        label="Tempo"
+        value={settings.bpm}
+        min={40}
+        max={150}
+        suffix=" bpm"
+        note={tempoWord(settings.bpm)}
+        onChange={(v) => onChange({ bpm: v })}
+      />
       <Slider
         label="How forgiving"
         value={settings.hitWindowMs}

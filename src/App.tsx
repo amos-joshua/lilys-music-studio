@@ -29,7 +29,8 @@ const MODES = [
 ];
 
 export default function App() {
-  const [settings, setSettings] = useStoredState<Settings>("lms-settings", DEFAULT_SETTINGS);
+  // Key is versioned: bump it when a default changes that a stored value would mask.
+  const [settings, setSettings] = useStoredState<Settings>("lms-settings-v2", DEFAULT_SETTINGS);
   const [mode, setMode] = useState<Mode>("home");
   const [sheet, setSheet] = useState<"none" | "settings" | "monitor">("none");
   const { log, sources, lastHit, subscribe, injectHit, clearLog } = useMidi(settings.bridgeWsUrl);

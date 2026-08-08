@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { audio } from "../audio/AudioEngine";
 import { BeatGrid } from "../game/BeatGrid";
 import { ANIMALS, ICONS, TREAT_SETS } from "../config/theme";
+import { Slider } from "../components/Slider";
 import {
   CALIBRATE_MIN_SAMPLES,
   DOUBLE_HIT_MS,
@@ -9,6 +10,7 @@ import {
   JUMP_TOTAL_S,
   MAX_OFFSET_MS,
   PERFECT_FRACTION,
+  tempoWord,
 } from "../config/settings";
 import type { Settings } from "../config/settings";
 import type { NoteHit } from "../midi/types";
@@ -51,6 +53,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
   const [bursts, setBursts] = useState<Burst[]>([]);
   const [countLabel, setCountLabel] = useState("");
   const [hud, setHud] = useState({ caught: 0, streak: 0, best: 0 });
+  const [preview, setPreview] = useState(false);
 
   const animal = useMemo(
     () => ANIMALS.find((a) => a.id === settings.animalId) ?? ANIMALS[0],
@@ -107,7 +110,26 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
     return () => window.removeEventListener("resize", measure);
   }, [measure]);
 
+  // Metronome preview on the setup screen, so a tempo can be heard before
+  // committing to it. Reads the bpm each tick, so dragging the slider is live.
+  useEffect(() => {
+    if (!preview || phase !== "ready") return;
+    audio.resume();
+    let next = audio.now + 0.15;
+    let beat = 0;
+    const id = setInterval(() => {
+      const spb = 60 / settingsRef.current.bpm;
+      while (next < audio.now + 0.3) {
+        audio.click(next, beat % 4 === 0);
+        beat++;
+        next += spb;
+      }
+    }, 60);
+    return () => clearInterval(id);
+  }, [preview, phase]);
+
   const start = useCallback((overrideBpm?: number) => {
+    setPreview(false);
     const ctx = audio.resume();
     audio.muted = !settingsRef.current.sound;
     const s = settingsRef.current;
@@ -388,8 +410,25 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
         {countLabel && <div className="countin">{countLabel}</div>}
 
         {phase === "ready" && (
-          <div className="overlay" onPointerDown={(e) => e.stopPropagation()}>
+          <div className="overlay setup" onPointerDown={(e) => e.stopPropagation()}>
             <h2>Hit the drum when the fruit arrives!</h2>
+
+            <div className="setupBox">
+              <Slider
+                big
+                label="Speed"
+                value={settings.bpm}
+                min={40}
+                max={150}
+                suffix=" bpm"
+                note={tempoWord(settings.bpm)}
+                onChange={(v) => onSettingsChange({ bpm: v })}
+              />
+              <button className={"ghost" + (preview ? " on" : "")} onClick={() => setPreview((p) => !p)}>
+                {preview ? "◼ Stop" : "▶ Hear it"}
+              </button>
+            </div>
+
             <button className="big" onClick={() => start()}>
               Start
             </button>
@@ -419,6 +458,9 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
                   A bit faster
                 </button>
               )}
+              <button className="big alt2" onClick={() => setPhase("ready")}>
+                Change speed
+              </button>
             </div>
           </div>
         )}

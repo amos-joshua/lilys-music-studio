@@ -18,7 +18,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  bpm: 84,
+  bpm: 72,
   hitWindowMs: 250,
   treatCount: 24,
   countInBeats: 4,
@@ -44,3 +44,11 @@ export const DOUBLE_HIT_MS = 120;
 export const PERFECT_FRACTION = 0.35;
 export const MAX_OFFSET_MS = 180;
 export const CALIBRATE_MIN_SAMPLES = 8;
+
+export function tempoWord(bpm: number): string {
+  if (bpm <= 60) return "very gentle";
+  if (bpm <= 76) return "gentle";
+  if (bpm <= 96) return "steady";
+  if (bpm <= 116) return "bouncy";
+  return "zippy";
+}

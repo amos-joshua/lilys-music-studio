@@ -324,6 +324,47 @@ main {
 .overlay .row {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.overlay.setup {
+  gap: 1.4rem;
+}
+
+.setupBox {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  width: min(34rem, 86vw);
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 1.2rem;
+  padding: 1rem 1.2rem;
+}
+
+.setupBox .field {
+  flex: 1;
+  margin: 0;
+}
+
+.setupBox .ghost {
+  padding: 0.55rem 1rem;
+  white-space: nowrap;
+}
+
+.setupBox .ghost.on {
+  background: var(--accent);
+  color: #1b2145;
+  font-weight: 700;
+}
+
+.field.big > span {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.field.big input[type="range"] {
+  height: 2.8rem;
 }
 
 .hint {
@@ -344,6 +385,11 @@ main {
 
 .big.alt {
   background: var(--accent-2);
+}
+
+.big.alt2 {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--ink);
 }
 
 /* ---- sheets ---- */
