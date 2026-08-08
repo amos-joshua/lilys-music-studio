@@ -1,0 +1,42 @@
+:root {
+  --bg: #10142b;
+  --bg-2: #1b2145;
+  --ink: #f2f5ff;
+  --muted: #9aa3c7;
+  --accent: #ffd32a;
+  --accent-2: #2ed573;
+  --danger: #ff4757;
+  font-family: "Nunito", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+img {
+  -webkit-user-drag: none;
+}

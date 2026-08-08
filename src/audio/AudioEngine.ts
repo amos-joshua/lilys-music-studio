@@ -1,0 +1,126 @@
+/**
+ * Owns the AudioContext and the mapping between `performance.now()` (when MIDI
+ * and frames arrive) and the audio output clock (when sound is actually heard).
+ * The game's beat grid lives on the audio clock because it does not drift.
+ */
+export class AudioEngine {
+  ctx: AudioContext | null = null;
+  private offset = 0; // contextTime - performanceTime/1000, in the heard domain
+  private synced = false;
+  private master: GainNode | null = null;
+  muted = false;
+
+  /** Must be called from a user gesture. */
+  resume(): AudioContext {
+    if (!this.ctx) {
+      const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      this.ctx = new Ctor({ latencyHint: "interactive" });
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.9;
+      this.master.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === "suspended") void this.ctx.resume();
+    this.syncClock(true);
+    return this.ctx;
+  }
+
+  get now(): number {
+    return this.ctx ? this.ctx.currentTime : performance.now() / 1000;
+  }
+
+  /**
+   * Re-measure the perf<->context offset. Uses getOutputTimestamp so the
+   * mapping refers to sound leaving the speaker, not entering the buffer.
+   */
+  syncClock(force = false) {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    let next: number | null = null;
+    const ts = ctx.getOutputTimestamp?.();
+    if (ts && ts.contextTime && ts.performanceTime) {
+      next = ts.contextTime - ts.performanceTime / 1000;
+    } else if (force) {
+      next = ctx.currentTime - performance.now() / 1000;
+    }
+    if (next === null) return;
+    if (!this.synced || force) {
+      this.offset = next;
+      this.synced = true;
+    } else {
+      this.offset += (next - this.offset) * 0.05; // gentle, avoids visual jitter
+    }
+  }
+
+  perfToCtx(perfMs: number): number {
+    return perfMs / 1000 + this.offset;
+  }
+
+  ctxToPerf(ctxTime: number): number {
+    return (ctxTime - this.offset) * 1000;
+  }
+
+  private tone(at: number, freq: number, dur: number, gain: number, type: OscillatorType = "sine", endFreq?: number) {
+    const ctx = this.ctx;
+    if (!ctx || !this.master || this.muted) return;
+    const t = Math.max(at, ctx.currentTime);
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    if (endFreq !== undefined) osc.frequency.exponentialRampToValueAtTime(Math.max(endFreq, 1), t + dur);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g);
+    g.connect(this.master);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+
+  private noise(at: number, dur: number, gain: number, hz: number) {
+    const ctx = this.ctx;
+    if (!ctx || !this.master || this.muted) return;
+    const t = Math.max(at, ctx.currentTime);
+    const frames = Math.ceil(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, frames, ctx.sampleRate);
+    const chan = buf.getChannelData(0);
+    for (let i = 0; i < frames; i++) chan[i] = (Math.random() * 2 - 1) * (1 - i / frames);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = hz;
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    src.connect(filter);
+    filter.connect(g);
+    g.connect(this.master);
+    src.start(t);
+  }
+
+  /** Metronome / count-in click. */
+  click(at: number, accent = false) {
+    this.tone(at, accent ? 1400 : 900, 0.05, accent ? 0.22 : 0.12, "square");
+  }
+
+  /** Instant feedback for a pad strike — the pad itself may be silent. */
+  thump(at: number, velocity: number) {
+    const v = 0.25 + (velocity / 127) * 0.45;
+    this.tone(at, 180, 0.14, 0.35 * v, "sine", 55);
+    this.noise(at, 0.06, 0.18 * v, 2200);
+  }
+
+  /** Reward when the animal actually reaches the treat. */
+  chomp(at: number, perfect: boolean) {
+    this.tone(at, 520, 0.09, 0.2, "triangle", 880);
+    this.tone(at + 0.07, 880, 0.14, 0.18, "triangle", 1320);
+    if (perfect) this.tone(at + 0.14, 1760, 0.16, 0.12, "sine");
+  }
+
+  fanfare(at?: number) {
+    const t = at ?? this.now + 0.02;
+    [523, 659, 784, 1047].forEach((f, i) => this.tone(t + i * 0.12, f, 0.3, 0.2, "triangle"));
+  }
+}
+
+export const audio = new AudioEngine();
