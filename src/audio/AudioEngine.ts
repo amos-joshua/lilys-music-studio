@@ -117,6 +117,17 @@ export class AudioEngine {
     if (perfect) this.tone(at + 0.14, 1760, 0.16, 0.12, "sine");
   }
 
+  /** Climbing blip — pitch rises with progress up the hill. */
+  blip(at: number, progress: number, velocity: number) {
+    const freq = 330 * Math.pow(2, progress * 1.5);
+    this.tone(at, freq, 0.08, 0.13 + (velocity / 127) * 0.08, "triangle", freq * 1.12);
+  }
+
+  /** Landing at the bottom of the hill. */
+  boing(at: number, strength: number) {
+    this.tone(at, 220, 0.22, 0.12 * strength, "sine", 90);
+  }
+
   fanfare(at?: number) {
     const t = at ?? this.now + 0.02;
     [523, 659, 784, 1047].forEach((f, i) => this.tone(t + i * 0.12, f, 0.3, 0.2, "triangle"));

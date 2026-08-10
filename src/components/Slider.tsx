@@ -6,20 +6,18 @@ interface Props {
   step?: number;
   suffix?: string;
   note?: string;
+  /** Replaces the numeric readout entirely, when the number means nothing to a reader. */
+  valueLabel?: string;
   big?: boolean;
   onChange: (v: number) => void;
 }
 
-export function Slider({ label, value, min, max, step = 1, suffix = "", note, big, onChange }: Props) {
+export function Slider({ label, value, min, max, step = 1, suffix = "", note, valueLabel, big, onChange }: Props) {
   return (
     <label className={"field" + (big ? " big" : "")}>
       <span>
         {label}
-        <em>
-          {value}
-          {suffix}
-          {note ? ` · ${note}` : ""}
-        </em>
+        <em>{valueLabel ?? `${value}${suffix}${note ? ` · ${note}` : ""}`}</em>
       </span>
       <input
         type="range"

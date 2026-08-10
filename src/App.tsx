@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { DrumJump } from "./games/DrumJump";
+import { HillClimb } from "./games/HillClimb";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { MidiMonitor } from "./components/MidiMonitor";
 import { useMidi } from "./midi/useMidi";
@@ -9,7 +10,7 @@ import type { Settings } from "./config/settings";
 import { ICONS } from "./config/theme";
 import "./App.css";
 
-type Mode = "home" | "drum";
+type Mode = "home" | "drum" | "hill";
 
 const MODES = [
   {
@@ -17,6 +18,13 @@ const MODES = [
     name: "Drum Jump",
     blurb: "Keep the beat and the lion leaps for the fruit.",
     icon: ICONS.drum,
+    ready: true,
+  },
+  {
+    id: "hill" as const,
+    name: "Hill Climb",
+    blurb: "Drum fast to climb the hill. Stop and you slide back down.",
+    icon: ICONS.icecream,
     ready: true,
   },
   {
@@ -79,7 +87,7 @@ export default function App() {
                 className={"card" + (m.ready ? "" : " soon")}
                 disabled={!m.ready}
                 onClick={() => {
-                  if (m.id === "drum") setMode("drum");
+                  if (m.id === "drum" || m.id === "hill") setMode(m.id);
                 }}
               >
                 <img src={m.icon} alt="" />
@@ -93,6 +101,16 @@ export default function App() {
 
         {mode === "drum" && (
           <DrumJump
+            settings={settings}
+            onSettingsChange={patch}
+            subscribe={subscribe}
+            injectHit={injectHit}
+            onExit={() => setMode("home")}
+          />
+        )}
+
+        {mode === "hill" && (
+          <HillClimb
             settings={settings}
             onSettingsChange={patch}
             subscribe={subscribe}

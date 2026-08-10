@@ -65,4 +65,4 @@ export const TREAT_SETS: { id: string; name: string; items: Sprite[] }[] = [
   },
 ];
 
-export const ICONS = { sparkles, star, drum, piano, trophy };
+export const ICONS = { sparkles, star, drum, piano, trophy, icecream };

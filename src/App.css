@@ -227,8 +227,82 @@ main {
   }
 }
 
+/* ---- hill climb ---- */
+.hill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hill path {
+  fill: #3aa85a;
+  stroke: #57c777;
+  stroke-width: 6;
+  vector-effect: non-scaling-stroke;
+}
+
+.climber img {
+  position: absolute;
+  width: 16vh;
+  height: 16vh;
+  transform: translate(-50%, -100%);
+  filter: drop-shadow(0 0.4rem 0.5rem rgba(0, 0, 0, 0.35));
+}
+
+.prize img {
+  position: absolute;
+  width: 13vh;
+  height: 13vh;
+  transform: translate(-50%, -100%);
+  filter: drop-shadow(0 0.4rem 0.5rem rgba(0, 0, 0, 0.35));
+  transition: opacity 0.25s ease;
+}
+
+.meter {
+  flex: 1;
+  height: 0.8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--accent-2);
+}
+
+.yum {
+  position: absolute;
+  top: 18%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12vh;
+  font-weight: 900;
+  color: var(--accent);
+  text-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  animation: yum 0.5s ease-out;
+}
+
+@keyframes yum {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .treat,
-.animal {
+.animal,
+.climber,
+.prize {
   position: absolute;
   top: 0;
   left: 0;
