@@ -3,9 +3,14 @@
  * by the game that walks the animal along it, so the two can never disagree.
  * Coordinates are fractions of the arena; y is measured from the bottom.
  */
-const P0 = { x: 0.06, y: 0.1 };
-const P1 = { x: 0.6, y: 0.14 };
-const P2 = { x: 0.9, y: 0.78 };
+/**
+ * Control points are chosen so height is gained steadily from the very bottom.
+ * A curve that starts near-horizontal makes early hits read as sideways drift
+ * rather than climbing, however good the physics feels.
+ */
+const P0 = { x: 0.05, y: 0.08 };
+const P1 = { x: 0.48, y: 0.3 };
+const P2 = { x: 0.92, y: 0.8 };
 
 const svgY = (y: number) => (100 - y * 100).toFixed(2);
 const svgX = (x: number) => (x * 100).toFixed(2);
