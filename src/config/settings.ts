@@ -15,8 +15,8 @@ export interface Settings {
   acceptAnyNote: boolean;
   drumChannelOnly: boolean;
   bridgeWsUrl: string;
-  /** Hill Climb: how fast the animal slides back, in hill-fractions per second². */
-  hillSlide: number;
+  /** Hill Climb: how fast upward motion dies away. Sets the drumming rate demanded. */
+  hillBrake: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -36,15 +36,27 @@ export const DEFAULT_SETTINGS: Settings = {
   acceptAnyNote: true,
   drumChannelOnly: false,
   bridgeWsUrl: "",
-  hillSlide: 0.15,
+  hillBrake: 0.36,
 };
 
-// Hill Climb physics, in fractions of the hill.
-export const HILL_IMPULSE = 0.09; // velocity added per hit
-export const HILL_STEP = 0.008; // instant nudge per hit, for crispness
-export const HILL_V_MAX = 0.55;
-export const HILL_V_MIN = -0.45;
-export const HILL_BOUNCE = 0.4;
+/**
+ * Hill Climb physics, in fractions of the hill per second.
+ *
+ * Uphill speed is capped low and bled off quickly, so the climb is driven by
+ * sustained drumming rather than by momentum built up from a few hits. Below
+ * zero the animal instead accelerates gently, so stopping is a slow slide
+ * rather than a fall. A hit always leaves the animal moving forwards, however
+ * fast it was sliding — otherwise a burst of hits reads as doing nothing.
+ */
+export const HILL_V_MAX = 0.18; // ~5.6s climb at full speed
+export const HILL_KICK = 0.18; // added per hit, then clamped into range
+export const HILL_MIN_KICK = 0.035; // the floor a single hit always reaches
+export const HILL_STEP = 0.005; // instant nudge per hit, for crispness
+export const HILL_GRAVITY = 0.05; // downhill only, deliberately slow
+export const HILL_V_MIN = -0.25;
+export const HILL_BOUNCE = 0.45;
+export const HILL_BRAKE_MIN = 0.18;
+export const HILL_BRAKE_MAX = 0.66;
 
 // Timing constants that are engine detail rather than user-facing knobs.
 export const JUMP_RISE_S = 0.13;
@@ -56,21 +68,18 @@ export const MAX_OFFSET_MS = 180;
 export const CALIBRATE_MIN_SAMPLES = 8;
 
 /**
- * `slide / HILL_IMPULSE` is the hits-per-second at which the animal breaks even,
- * so the words describe the pace actually being asked for.
+ * `brake / HILL_V_MAX` is the hits-per-second at which the animal never stops
+ * moving forwards, so the words describe the pace actually being asked for.
  */
-export function hillPaceWord(slide: number): string {
-  const rate = slide / HILL_IMPULSE;
-  if (rate <= 0.9) return "very easy";
-  if (rate <= 1.4) return "easy";
-  if (rate <= 1.9) return "steady drumming";
-  if (rate <= 2.4) return "brisk drumming";
-  if (rate <= 2.9) return "fast drumming";
+export function hillPaceWord(brake: number): string {
+  const rate = brake / HILL_V_MAX;
+  if (rate <= 1.2) return "very easy";
+  if (rate <= 1.7) return "easy";
+  if (rate <= 2.2) return "steady drumming";
+  if (rate <= 2.8) return "brisk drumming";
+  if (rate <= 3.4) return "fast drumming";
   return "very fast";
 }
-
-/** Above this the hill is out of reach for a small child. */
-export const HILL_SLIDE_MAX = 0.28;
 
 export function tempoWord(bpm: number): string {
   if (bpm <= 60) return "very gentle";

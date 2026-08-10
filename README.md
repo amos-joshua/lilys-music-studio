@@ -14,7 +14,14 @@ npm run build
 | Mode | State |
 | --- | --- |
 | **Drum Jump** — treats arrive on the beat, the animal leaps for them | playable |
+| **Hill Climb** — drum fast to climb; stop and the animal slides back | playable |
 | **Piano Falls** — falling coloured notes on the sticker key colours | not started |
+
+Drum Jump is about precision and runs on the beat grid. Hill Climb is about sustained
+rate and has no rhythm requirement at all — sporadic hits count exactly as much as even
+ones. Its physics live in `config/settings.ts` (`HILL_*`) and are tuned by simulation:
+uphill speed is capped low and bled off in about half a second, downhill acceleration is
+slow, and any hit always leaves the animal moving forwards however fast it was sliding.
 
 ## Input
 

@@ -1,5 +1,11 @@
 import { ANIMALS, TREAT_SETS } from "../config/theme";
-import { DEFAULT_SETTINGS, HILL_SLIDE_MAX, hillPaceWord, tempoWord } from "../config/settings";
+import {
+  DEFAULT_SETTINGS,
+  HILL_BRAKE_MAX,
+  HILL_BRAKE_MIN,
+  hillPaceWord,
+  tempoWord,
+} from "../config/settings";
 import type { Settings } from "../config/settings";
 import { Slider } from "./Slider";
 
@@ -77,13 +83,14 @@ export function SettingsPanel({ settings, onChange, onClose }: Props) {
       <h3>Hill Climb</h3>
       <Slider
         label="How hard"
-        value={Math.round(settings.hillSlide * 100)}
-        min={5}
-        max={HILL_SLIDE_MAX * 100}
-        valueLabel={hillPaceWord(settings.hillSlide)}
-        onChange={(v) => onChange({ hillSlide: v / 100 })}
+        value={Math.round(settings.hillBrake * 100)}
+        min={HILL_BRAKE_MIN * 100}
+        max={HILL_BRAKE_MAX * 100}
+        step={2}
+        valueLabel={hillPaceWord(settings.hillBrake)}
+        onChange={(v) => onChange({ hillBrake: v / 100 })}
       />
-      <p className="hint">How quickly the animal slides back when the drumming stops.</p>
+      <p className="hint">How quickly upward motion dies away when the drumming stops.</p>
 
       <h3>Sound</h3>
       <Toggle label="Sound effects" value={settings.sound} onChange={(v) => onChange({ sound: v })} />

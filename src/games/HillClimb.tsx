@@ -5,11 +5,14 @@ import { ANIMALS, ICONS, TREAT_SETS } from "../config/theme";
 import { Slider } from "../components/Slider";
 import {
   HILL_BOUNCE,
-  HILL_IMPULSE,
+  HILL_BRAKE_MAX,
+  HILL_BRAKE_MIN,
+  HILL_GRAVITY,
+  HILL_KICK,
+  HILL_MIN_KICK,
   HILL_STEP,
   HILL_V_MAX,
   HILL_V_MIN,
-  HILL_SLIDE_MAX,
   hillPaceWord,
 } from "../config/settings";
 import type { Settings } from "../config/settings";
@@ -106,8 +109,11 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
       }
       if (phaseRef.current !== "playing") return;
 
+      // A hit always leaves the animal moving forwards, however fast it was
+      // sliding, so a burst of hits never reads as having done nothing.
       const scale = s.velocityJump ? 0.7 + (hit.velocity / 127) * 0.6 : 1;
-      vel.current = Math.min(HILL_V_MAX, vel.current + HILL_IMPULSE * scale);
+      const kicked = vel.current + HILL_KICK * scale;
+      vel.current = Math.min(HILL_V_MAX, Math.max(HILL_MIN_KICK, kicked));
       pos.current = Math.min(1, pos.current + HILL_STEP * scale);
       squash.current = 1;
       audio.blip(audio.now + 0.005, pos.current, hit.velocity);
@@ -129,13 +135,17 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
       const s = settingsRef.current;
 
       if (phaseRef.current === "playing") {
-        vel.current = Math.max(HILL_V_MIN, vel.current - s.hillSlide * dt);
+        // Braking uphill is quick; the downhill slide builds up slowly.
+        vel.current =
+          vel.current > 0
+            ? Math.max(0, vel.current - s.hillBrake * dt)
+            : Math.max(HILL_V_MIN, vel.current - HILL_GRAVITY * dt);
         pos.current += vel.current * dt;
 
         if (pos.current <= 0) {
           pos.current = 0;
-          if (vel.current < -0.06) {
-            audio.boing(audio.now + 0.005, Math.min(1, -vel.current / 0.45));
+          if (vel.current < -0.04) {
+            audio.boing(audio.now + 0.005, Math.min(1, vel.current / HILL_V_MIN));
             squash.current = 1;
             vel.current = -vel.current * HILL_BOUNCE;
           } else if (vel.current < 0) {
@@ -253,11 +263,12 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
               <Slider
                 big
                 label="How hard"
-                value={Math.round(settings.hillSlide * 100)}
-                min={5}
-                max={HILL_SLIDE_MAX * 100}
-                valueLabel={hillPaceWord(settings.hillSlide)}
-                onChange={(v) => onSettingsChange({ hillSlide: v / 100 })}
+                value={Math.round(settings.hillBrake * 100)}
+                min={HILL_BRAKE_MIN * 100}
+                max={HILL_BRAKE_MAX * 100}
+                step={2}
+                valueLabel={hillPaceWord(settings.hillBrake)}
+                onChange={(v) => onSettingsChange({ hillBrake: v / 100 })}
               />
             </div>
 
