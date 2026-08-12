@@ -117,6 +117,19 @@ export class AudioEngine {
     if (perfect) this.tone(at + 0.14, 1760, 0.16, 0.12, "sine");
   }
 
+  /** Piano-ish note. The controller may be silent, so the app has to sound it. */
+  piano(at: number, freq: number, velocity = 100) {
+    const gain = 0.1 + (velocity / 127) * 0.14;
+    this.tone(at, freq, 1.1, gain, "triangle");
+    this.tone(at, freq * 2, 0.55, gain * 0.28, "sine");
+    this.tone(at, freq * 3, 0.3, gain * 0.12, "sine");
+  }
+
+  /** Gentle "not that one" — deliberately soft and short. */
+  buzz(at: number) {
+    this.tone(at, 150, 0.16, 0.08, "sawtooth", 110);
+  }
+
   /** Climbing blip — pitch rises with progress up the hill. */
   blip(at: number, progress: number, velocity: number) {
     const freq = 330 * Math.pow(2, progress * 1.5);

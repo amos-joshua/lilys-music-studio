@@ -15,13 +15,33 @@ npm run build
 | --- | --- |
 | **Drum Jump** — treats arrive on the beat, the animal leaps for them | playable |
 | **Hill Climb** — drum fast to climb; stop and the animal slides back | playable |
-| **Piano Falls** — falling coloured notes on the sticker key colours | not started |
+| **Note Muncher** — coloured bars on a treble staff, played to be eaten | playable |
 
 Drum Jump is about precision and runs on the beat grid. Hill Climb is about sustained
 rate and has no rhythm requirement at all — sporadic hits count exactly as much as even
 ones. Its physics live in `config/settings.ts` (`HILL_*`) and are tuned by simulation:
 uphill speed is capped low and bled off in about half a second, downhill acceleration is
 slow, and any hit always leaves the animal moving forwards however fast it was sliding.
+
+### Note Muncher
+
+A real treble staff drawn horizontally, with middle C as a permanent dim line rather than
+per-note ledger lines. Melodies stay inside C4–A4, which is the range with coloured
+stickers on the piano, so every bar's colour is findable on a key.
+
+Timing is deliberately decoupled from the melody data. A bar's width is `beats × unit` —
+a picture of duration, not a rule. Advancement is event-driven: the bar waits at the play
+line indefinitely, and a correct note slides the strip left by exactly one bar. **There is
+no clock and no render loop in this mode at all** — every animation is a CSS transition,
+so there is nothing to desync or calibrate.
+
+That leaves three knobs which vary independently, and the same melody data serves all of
+them: advance (`wait` today, `flow` later), duration (`tap` today, `hold` later), and
+tempo (only the slide animation, until `flow` exists).
+
+Any octave counts by default. Wrong notes sound the pressed pitch, move the animal to the
+wrong height — visibly, which is the lesson — shake it, and cost nothing. Eaten bars stay
+on the staff, brightened, as a record of what has been played.
 
 ## Input
 

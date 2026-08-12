@@ -466,6 +466,157 @@ main {
   color: var(--ink);
 }
 
+/* ---- note muncher ---- */
+.staffArena {
+  background: linear-gradient(180deg, #fbf8ef, #efe9d8);
+}
+
+.staffLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0.28vh;
+  min-height: 2px;
+  background: #2a2f4a;
+  border-radius: 2px;
+}
+
+.staffLine.guide {
+  height: 0.18vh;
+  min-height: 1px;
+  background: #b3ab97;
+}
+
+.playLine {
+  position: absolute;
+  top: 6%;
+  bottom: 6%;
+  width: 3px;
+  border-radius: 3px;
+  background: rgba(42, 47, 74, 0.25);
+}
+
+.strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+}
+
+.bar {
+  position: absolute;
+  border-radius: 999px;
+  box-shadow: inset 0 -0.3rem 0.6rem rgba(0, 0, 0, 0.16);
+  opacity: 0.92;
+}
+
+.bar.next {
+  animation: nextPulse 1.3s ease-in-out infinite;
+}
+
+@keyframes nextPulse {
+  0%,
+  100% {
+    box-shadow: inset 0 -0.3rem 0.6rem rgba(0, 0, 0, 0.16), 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% {
+    box-shadow: inset 0 -0.3rem 0.6rem rgba(0, 0, 0, 0.16), 0 0 0 0.5rem rgba(255, 255, 255, 0.55);
+  }
+}
+
+.bar.eaten,
+.bar.listening {
+  opacity: 1;
+  filter: brightness(1.35) saturate(1.35);
+  box-shadow:
+    inset 0 -0.3rem 0.6rem rgba(255, 255, 255, 0.3),
+    0 0 1.4rem rgba(255, 255, 255, 0.85);
+  animation: none;
+}
+
+.freeBar {
+  animation: drift 5s linear forwards;
+}
+
+@keyframes drift {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-70vw);
+    opacity: 0;
+  }
+}
+
+.muncher {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  transition: transform 190ms cubic-bezier(0.34, 1.45, 0.5, 1);
+  z-index: 2;
+}
+
+.muncher img {
+  position: absolute;
+  width: 13vh;
+  height: 13vh;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0.3rem 0.4rem rgba(0, 0, 0, 0.28));
+}
+
+.muncher img.shake {
+  animation: shake 0.32s ease-in-out;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  20% {
+    transform: translate(-58%, -50%) rotate(-8deg);
+  }
+  50% {
+    transform: translate(-42%, -50%) rotate(8deg);
+  }
+  80% {
+    transform: translate(-54%, -50%) rotate(-4deg);
+  }
+}
+
+.tuneName {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.tunes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  max-width: min(40rem, 88vw);
+}
+
+.chip {
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 1.1rem;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--ink);
+}
+
+.chip.on {
+  background: var(--accent);
+  color: #1b2145;
+  font-weight: 800;
+}
+
 /* ---- sheets ---- */
 .scrim {
   position: fixed;

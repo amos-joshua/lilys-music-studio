@@ -17,6 +17,9 @@ export interface Settings {
   bridgeWsUrl: string;
   /** Hill Climb: how fast upward motion dies away. Sets the drumming rate demanded. */
   hillBrake: number;
+  /** Note Muncher: which tune, and whether the octave has to match. */
+  melodyId: string;
+  staffAnyOctave: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -37,7 +40,19 @@ export const DEFAULT_SETTINGS: Settings = {
   drumChannelOnly: false,
   bridgeWsUrl: "",
   hillBrake: 0.36,
+  melodyId: "up-down",
+  staffAnyOctave: true,
 };
+
+// Note Muncher layout, in fractions of the arena.
+export const STAFF_BASE = 0.17; // middle C, measured from the bottom
+export const STAFF_STEP = 0.061; // one diatonic step
+export const STAFF_PLAY_X = 0.29;
+export const STAFF_ANIMAL_X = 0.14;
+export const STAFF_BEAT_W = 0.1; // bar width per beat
+export const STAFF_BAR_GAP = 0.016;
+export const STAFF_SLIDE_MS = 300;
+export const STAFF_REPEAT_GUARD_MS = 100;
 
 /**
  * Hill Climb physics, in fractions of the hill per second.

@@ -8,6 +8,7 @@ import {
 } from "../config/settings";
 import type { Settings } from "../config/settings";
 import { Slider } from "./Slider";
+import { FREE_PLAY, MELODIES } from "../config/melodies";
 
 interface Props {
   settings: Settings;
@@ -91,6 +92,24 @@ export function SettingsPanel({ settings, onChange, onClose }: Props) {
         onChange={(v) => onChange({ hillBrake: v / 100 })}
       />
       <p className="hint">How quickly upward motion dies away when the drumming stops.</p>
+
+      <h3>Note Muncher</h3>
+      <label className="field">
+        <span>Tune</span>
+        <select value={settings.melodyId} onChange={(e) => onChange({ melodyId: e.target.value })}>
+          {MELODIES.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
+          ))}
+          <option value={FREE_PLAY}>Free play</option>
+        </select>
+      </label>
+      <Toggle
+        label="Any octave counts"
+        value={settings.staffAnyOctave}
+        onChange={(v) => onChange({ staffAnyOctave: v })}
+      />
 
       <h3>Sound</h3>
       <Toggle label="Sound effects" value={settings.sound} onChange={(v) => onChange({ sound: v })} />
