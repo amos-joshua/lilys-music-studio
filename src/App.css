@@ -526,14 +526,28 @@ main {
   }
 }
 
-.bar.eaten,
+.bar.eating,
 .bar.listening {
-  opacity: 1;
-  filter: brightness(1.35) saturate(1.35);
+  filter: brightness(1.4) saturate(1.4);
   box-shadow:
-    inset 0 -0.3rem 0.6rem rgba(255, 255, 255, 0.3),
-    0 0 1.4rem rgba(255, 255, 255, 0.85);
+    inset 0 -0.3rem 0.6rem rgba(255, 255, 255, 0.35),
+    0 0 1.6rem rgba(255, 255, 255, 0.9);
   animation: none;
+}
+
+.bar.eating {
+  animation: chew 0.34s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes chew {
+  0%,
+  100% {
+    filter: brightness(1.4) saturate(1.4);
+  }
+  50% {
+    filter: brightness(1.9) saturate(1.6);
+  }
 }
 
 .freeBar {

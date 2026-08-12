@@ -63,10 +63,12 @@ export function useMidi(wsUrl: string) {
     return () => listeners.current.delete(fn);
   }, []);
 
-  /** For screen taps — routed through the same path as real MIDI. */
+  /** For screen taps — routed through the same path as real MIDI, strike then release. */
   const injectHit = useCallback(
     (velocity = 100) => {
-      emitHit({ perfTime: performance.now(), note: 36, velocity, channel: 9, device: "touch", kind: "keyboard" });
+      const base = { note: 36, channel: 9, device: "touch", kind: "keyboard" as const };
+      emitHit({ ...base, perfTime: performance.now(), velocity, on: true });
+      setTimeout(() => emitHit({ ...base, perfTime: performance.now(), velocity: 0, on: false }), 120);
     },
     [emitHit]
   );

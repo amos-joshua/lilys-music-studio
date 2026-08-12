@@ -12,25 +12,50 @@ export class KeyboardSource implements MidiSource {
   label = "Keyboard";
   status: SourceStatus = "ready";
   detail = "space = pad · A–K = C4–C5";
-  private handler: ((e: KeyboardEvent) => void) | null = null;
+  private down: ((e: KeyboardEvent) => void) | null = null;
+  private up: ((e: KeyboardEvent) => void) | null = null;
+  private held = new Set<string>();
 
   start(emit: (m: RawMessage) => void) {
-    this.handler = (e) => {
-      if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+    const noteFor = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return null;
       const key = e.key.toLowerCase();
       const note = key === " " ? PAD_NOTE : PIANO_KEYS[key];
-      if (note === undefined) return;
-      e.preventDefault();
-      emit({ perfTime: performance.now(), kind: "keyboard", device: "keyboard", bytes: [0x99, note, 100] });
+      return note === undefined ? null : { key, note };
     };
-    window.addEventListener("keydown", this.handler);
+    const send = (note: number, on: boolean) =>
+      emit({
+        perfTime: performance.now(),
+        kind: "keyboard",
+        device: "keyboard",
+        bytes: [on ? 0x99 : 0x89, note, on ? 100 : 0],
+      });
+
+    this.down = (e) => {
+      if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+      const hit = noteFor(e);
+      if (!hit) return;
+      e.preventDefault();
+      this.held.add(hit.key);
+      send(hit.note, true);
+    };
+    this.up = (e) => {
+      const hit = noteFor(e);
+      if (!hit || !this.held.delete(hit.key)) return;
+      e.preventDefault();
+      send(hit.note, false);
+    };
+    window.addEventListener("keydown", this.down);
+    window.addEventListener("keyup", this.up);
   }
 
   stop() {
-    if (this.handler) window.removeEventListener("keydown", this.handler);
-    this.handler = null;
+    if (this.down) window.removeEventListener("keydown", this.down);
+    if (this.up) window.removeEventListener("keyup", this.up);
+    this.down = null;
+    this.up = null;
+    this.held.clear();
     this.status = "idle";
   }
 }

@@ -101,6 +101,7 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
   const onHit = useCallback(
     (hit: NoteHit) => {
       const s = settingsRef.current;
+      if (!hit.on) return; // strikes only
       if (!s.acceptAnyNote && s.drumChannelOnly && hit.channel !== 9) return;
 
       if (phaseRef.current === "ready") {

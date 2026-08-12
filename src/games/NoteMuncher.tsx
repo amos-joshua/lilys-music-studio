@@ -8,10 +8,13 @@ import {
   STAFF_BAR_GAP,
   STAFF_BASE,
   STAFF_BEAT_W,
+  STAFF_EAT_MS,
+  STAFF_MAX_HOLD_MS,
   STAFF_PLAY_X,
   STAFF_REPEAT_GUARD_MS,
   STAFF_SLIDE_MS,
   STAFF_STEP,
+  barOpacity,
 } from "../config/settings";
 import type { Settings } from "../config/settings";
 import {
@@ -50,6 +53,7 @@ export function NoteMuncher({ settings, onSettingsChange, subscribe, onExit }: P
   const [index, setIndex] = useState(0);
   const [listenIndex, setListenIndex] = useState(-1);
   const [animalStep, setAnimalStep] = useState(0);
+  const [eating, setEating] = useState<{ i: number; note: number } | null>(null);
   const [shakes, setShakes] = useState(0);
   const [sparks, setSparks] = useState<Spark[]>([]);
   const [freeBars, setFreeBars] = useState<FreeBar[]>([]);
@@ -60,6 +64,7 @@ export function NoteMuncher({ settings, onSettingsChange, subscribe, onExit }: P
   const phaseRef = useRef<Phase>("ready");
   const listeningRef = useRef(false);
   const lastHit = useRef({ note: -1, t: 0 });
+  const eatingRef = useRef<{ i: number; note: number } | null>(null);
   const sparkId = useRef(0);
   const freeId = useRef(0);
   const listenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -68,6 +73,7 @@ export function NoteMuncher({ settings, onSettingsChange, subscribe, onExit }: P
   settingsRef.current = settings;
   indexRef.current = index;
   phaseRef.current = phase;
+  eatingRef.current = eating;
 
   const melody = useMemo(() => melodyById(settings.melodyId), [settings.melodyId]);
   const isFree = settings.melodyId === FREE_PLAY;
@@ -165,13 +171,34 @@ export function NoteMuncher({ settings, onSettingsChange, subscribe, onExit }: P
     setSparks([]);
     setFreeBars([]);
     setAnimalStep(0);
+    eatingRef.current = null;
+    setEating(null);
     setPhase("playing");
   }, [stopListening]);
+
+  /** Release finishes the mouthful: the bar goes, the strip brings up the next. */
+  const finishEat = useCallback(() => {
+    const e = eatingRef.current;
+    if (!e) return;
+    eatingRef.current = null;
+    setEating(null);
+    if (ends.has(e.i)) audio.chomp(audio.now + 0.02, true);
+    setIndex(e.i + 1);
+    if (e.i + 1 >= steps.length) {
+      setPhase("done");
+      setTimeout(() => audio.fanfare(), STAFF_SLIDE_MS);
+    }
+  }, [ends, steps.length]);
 
   const onHit = useCallback(
     (hit: NoteHit) => {
       const s = settingsRef.current;
       if (!s.acceptAnyNote && s.drumChannelOnly && hit.channel !== 9) return;
+
+      if (!hit.on) {
+        if (eatingRef.current?.note === hit.note) finishEat();
+        return;
+      }
 
       if (phaseRef.current === "ready") {
         start();
@@ -194,31 +221,49 @@ export function NoteMuncher({ settings, onSettingsChange, subscribe, onExit }: P
         return;
       }
 
-      if (phaseRef.current !== "playing" || listeningRef.current) return;
+      // While a bar is being eaten, stray presses are ignored rather than scolded.
+      if (phaseRef.current !== "playing" || listeningRef.current || eatingRef.current) return;
 
       const i = indexRef.current;
       const target = steps[i];
       if (!target?.note) return;
 
       if (matches(midi, midiFromName(target.note), s.staffAnyOctave)) {
-        addSpark(playX + layout.widths[i] / 2, yFor(staffStep(midiFromName(target.note))));
-        if (ends.has(i)) audio.chomp(audio.now + 0.02, true);
-        if (i + 1 >= steps.length) {
-          setIndex(i + 1);
-          setPhase("done");
-          setTimeout(() => audio.fanfare(), STAFF_SLIDE_MS);
-        } else {
-          setIndex(i + 1);
-        }
+        // The bar is not consumed yet — it slides under the animal and sparks
+        // for as long as the note is held, then vanishes on release. The ref is
+        // set here too, so a very short tap cannot release before the re-render.
+        eatingRef.current = { i, note: midi };
+        setEating({ i, note: midi });
       } else {
         setShakes((n) => n + 1);
         audio.buzz(audio.now + 0.03);
       }
     },
-    [start, isFree, steps, ends, addSpark, playX, layout.widths, yFor]
+    [start, isFree, steps, finishEat]
   );
 
   useEffect(() => subscribe(onHit), [subscribe, onHit]);
+
+  // Sparks for as long as the note is held.
+  useEffect(() => {
+    if (!eating) return;
+    const note = steps[eating.i]?.note;
+    if (!note) return;
+    const y = yFor(staffStep(midiFromName(note)));
+    const x = STAFF_ANIMAL_X * size.w;
+    const spark = () =>
+      addSpark(x + (Math.random() - 0.5) * 0.07 * size.w, y + (Math.random() - 0.5) * barH);
+    spark();
+    const id = setInterval(spark, 130);
+    return () => clearInterval(id);
+  }, [eating, steps, yFor, size.w, barH, addSpark]);
+
+  // Some controllers never send note-off; do not let a bar hang forever.
+  useEffect(() => {
+    if (!eating) return;
+    const t = setTimeout(finishEat, STAFF_MAX_HOLD_MS);
+    return () => clearTimeout(t);
+  }, [eating, finishEat]);
 
   // Rests advance on their own.
   useEffect(() => {
@@ -268,15 +313,19 @@ export function NoteMuncher({ settings, onSettingsChange, subscribe, onExit }: P
               transition: `transform ${STAFF_SLIDE_MS}ms cubic-bezier(0.22, 0.7, 0.3, 1)`,
             }}
           >
-            {steps.map((s, i) =>
-              s.note ? (
+            {steps.map((s, i) => {
+              // Eaten bars are gone entirely — a played trail is just clutter.
+              if (!s.note || i < index) return null;
+              const isEating = eating?.i === i;
+              const ahead = i - active;
+              return (
                 <div
                   key={i}
                   className={
                     "bar" +
-                    (i < index ? " eaten" : "") +
+                    (isEating ? " eating" : "") +
                     (i === listenIndex ? " listening" : "") +
-                    (i === index && listenIndex < 0 ? " next" : "")
+                    (i === index && listenIndex < 0 && !isEating ? " next" : "")
                   }
                   style={{
                     left: layout.xs[i],
@@ -284,10 +333,13 @@ export function NoteMuncher({ settings, onSettingsChange, subscribe, onExit }: P
                     height: barH,
                     top: yFor(staffStep(midiFromName(s.note))) - barH / 2,
                     background: NOTE_COLORS[letterOf(midiFromName(s.note))],
+                    opacity: isEating ? 1 : barOpacity(ahead),
+                    transform: isEating ? `translate3d(${STAFF_ANIMAL_X * size.w - playX}px, 0, 0)` : undefined,
+                    transition: `opacity 320ms ease, transform ${STAFF_EAT_MS}ms ease-out`,
                   }}
                 />
-              ) : null
-            )}
+              );
+            })}
           </div>
         )}
 

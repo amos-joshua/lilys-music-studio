@@ -50,9 +50,20 @@ export const STAFF_STEP = 0.061; // one diatonic step
 export const STAFF_PLAY_X = 0.29;
 export const STAFF_ANIMAL_X = 0.14;
 export const STAFF_BEAT_W = 0.1; // bar width per beat
-export const STAFF_BAR_GAP = 0.016;
+export const STAFF_BAR_GAP = 0.055; // roomy, so only a few bars are on screen at once
 export const STAFF_SLIDE_MS = 300;
 export const STAFF_REPEAT_GUARD_MS = 100;
+export const STAFF_EAT_MS = 260;
+/** Safety net for controllers that never send note-off. */
+export const STAFF_MAX_HOLD_MS = 2500;
+
+/** How visible an upcoming bar is, by how many notes away it is. */
+export function barOpacity(ahead: number): number {
+  if (ahead <= 0) return 1;
+  if (ahead === 1) return 0.38;
+  if (ahead === 2) return 0.2;
+  return 0.1;
+}
 
 /**
  * Hill Climb physics, in fractions of the hill per second.

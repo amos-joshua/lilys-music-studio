@@ -21,6 +21,8 @@ export interface NoteHit {
   channel: number; // 0-based
   device: string;
   kind: SourceKind;
+  /** False for a release. Modes that only care about strikes filter these out. */
+  on: boolean;
 }
 
 export interface MidiSource {
@@ -38,9 +40,10 @@ export function decodeNote(m: RawMessage): NoteHit | null {
   const status = b[0];
   const type = status & 0xf0;
   const channel = status & 0x0f;
-  if (type === 0x90 && b[2] > 0) {
-    return { perfTime: m.perfTime, note: b[1], velocity: b[2], channel, device: m.device, kind: m.kind };
-  }
+  const base = { perfTime: m.perfTime, note: b[1], channel, device: m.device, kind: m.kind };
+  // Note-off arrives either as 0x80 or as 0x90 with zero velocity.
+  if (type === 0x90 && b[2] > 0) return { ...base, velocity: b[2], on: true };
+  if (type === 0x80 || (type === 0x90 && b[2] === 0)) return { ...base, velocity: 0, on: false };
   return null;
 }
 

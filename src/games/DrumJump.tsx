@@ -166,6 +166,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
   const onHit = useCallback(
     (hit: NoteHit) => {
       const s = settingsRef.current;
+      if (!hit.on) return; // strikes only
       if (!s.acceptAnyNote && s.drumChannelOnly && hit.channel !== 9) return;
 
       if (phaseRef.current === "ready" || phaseRef.current === "done") {
