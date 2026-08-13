@@ -1,3 +1,5 @@
+import heyUrl from "../assets/audio/hey.mp3";
+
 /**
  * Owns the AudioContext and the mapping between `performance.now()` (when MIDI
  * and frames arrive) and the audio output clock (when sound is actually heard).
@@ -8,6 +10,8 @@ export class AudioEngine {
   private offset = 0; // contextTime - performanceTime/1000, in the heard domain
   private synced = false;
   private master: GainNode | null = null;
+  private heyBuffer: AudioBuffer | null = null;
+  private heyLoading = false;
   muted = false;
 
   /** Must be called from a user gesture. */
@@ -21,7 +25,21 @@ export class AudioEngine {
     }
     if (this.ctx.state === "suspended") void this.ctx.resume();
     this.syncClock(true);
+    void this.loadHey();
     return this.ctx;
+  }
+
+  private async loadHey() {
+    if (this.heyBuffer || this.heyLoading || !this.ctx) return;
+    this.heyLoading = true;
+    try {
+      const res = await fetch(heyUrl);
+      this.heyBuffer = await this.ctx.decodeAudioData(await res.arrayBuffer());
+    } catch {
+      // Leave it null; hey() falls back to the synthesised shout.
+    } finally {
+      this.heyLoading = false;
+    }
   }
 
   get now(): number {
@@ -117,12 +135,28 @@ export class AudioEngine {
     if (perfect) this.tone(at + 0.14, 1760, 0.16, 0.12, "sine");
   }
 
-  /**
-   * Shouted "hey!" on the downbeat — a sawtooth through a sweeping bandpass
-   * formant gives it a vowel-ish shape, over a clap transient. Marks the pulse
-   * far more clearly than another click would.
-   */
+  /** Recorded "hey!", falling back to synthesis until the sample has decoded. */
   hey(at: number) {
+    const ctx = this.ctx;
+    if (!ctx || !this.master || this.muted) return;
+    if (!this.heyBuffer) {
+      this.heySynth(at);
+      return;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = this.heyBuffer;
+    const g = ctx.createGain();
+    g.gain.value = 0.85;
+    src.connect(g);
+    g.connect(this.master);
+    src.start(Math.max(at, ctx.currentTime));
+  }
+
+  /**
+   * Stand-in shout — a sawtooth through a sweeping bandpass formant over a clap
+   * transient. Vowel-ish enough to read as a voice if the sample is missing.
+   */
+  private heySynth(at: number) {
     const ctx = this.ctx;
     if (!ctx || !this.master || this.muted) return;
     const t = Math.max(at, ctx.currentTime);

@@ -30,6 +30,8 @@ interface Treat {
   url: string;
   state: "pending" | "caught" | "missed";
   perfect: boolean;
+  /** Caught on a hit that shouted, so it pops with stars. */
+  hey: boolean;
 }
 
 interface Burst {
@@ -41,8 +43,10 @@ interface Burst {
   star?: { dx: number; dy: number };
 }
 
-/** A hit or a catch counts as a downbeat when its beat is a multiple of this. */
-const BEATS_PER_BAR = 4;
+/** The shout lands on the first hit of every group of this many. */
+const HITS_PER_SHOUT = 4;
+/** A gap longer than this many beats restarts the count, so the shout stays meaningful. */
+const SHOUT_RESET_BEATS = 2;
 
 interface Props {
   settings: Settings;
@@ -83,7 +87,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
   const scheduledBeat = useRef(-1);
   const shownBeat = useRef(-1);
   const lastHit = useRef({ t: -99, scored: false });
-  const lastHeyBeat = useRef(-1);
+  const hitCount = useRef(0);
   const offsetMs = useRef(settings.latencyOffsetMs);
   const errors = useRef<number[]>([]);
   const streak = useRef(0);
@@ -147,12 +151,14 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
       url: treatSet.items[i % treatSet.items.length].url,
       state: "pending" as const,
       perfect: false,
+      hey: false,
     }));
     nodes.current.clear();
     removed.current.clear();
     scheduledBeat.current = -1;
     shownBeat.current = -1;
-    lastHeyBeat.current = -1;
+    hitCount.current = 0;
+    lastHit.current = { t: -99, scored: false };
     errors.current = [];
     streak.current = 0;
     caught.current = 0;
@@ -211,14 +217,12 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
       jumpScale.current = s.velocityJump ? 0.78 + (hit.velocity / 127) * 0.5 : 1;
       audio.thump(audio.now + 0.005, hit.velocity);
 
-      // Shout on the downbeat whether or not a treat was caught. Quantising to
-      // the nearest beat means near-misses still count, but hits half a beat
-      // away belong to a different beat and stay silent.
-      const nearBeat = g.nearestIndex(t);
-      if (s.heyBeat && nearBeat % BEATS_PER_BAR === 0 && nearBeat !== lastHeyBeat.current) {
-        lastHeyBeat.current = nearBeat;
-        audio.hey(audio.now + 0.01);
-      }
+      // Shout on every fourth hit, caught or not. A long pause restarts the
+      // count so the shout always lands on the first hit of a fresh group.
+      if (t - lastHit.current.t > SHOUT_RESET_BEATS * g.spb) hitCount.current = 0;
+      const nth = ++hitCount.current;
+      const isHey = s.heyBeat && nth % HITS_PER_SHOUT === 1;
+      if (isHey) audio.hey(audio.now + 0.01);
 
       const hitWindow = s.hitWindowMs / 1000;
       let target: Treat | null = null;
@@ -239,7 +243,10 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
       const perfect = Math.abs(bestErr) <= hitWindow * PERFECT_FRACTION;
       target.state = "caught";
       target.perfect = perfect;
-      setTreats((prev) => prev.map((tr) => (tr.id === target!.id ? { ...tr, state: "caught", perfect } : tr)));
+      target.hey = isHey;
+      setTreats((prev) =>
+        prev.map((tr) => (tr.id === target!.id ? { ...tr, state: "caught", perfect, hey: isHey } : tr))
+      );
 
       caught.current++;
       streak.current++;
@@ -331,7 +338,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
           if (tr.state === "caught") {
             audio.chomp(audio.now + 0.005, tr.perfect);
             addBurst(CATCH_X * w, (1 - TREAT_Y) * h, tr.perfect);
-            if (tr.beat % BEATS_PER_BAR === 0) addStars(CATCH_X * w, (1 - TREAT_Y) * h);
+            if (tr.hey) addStars(CATCH_X * w, (1 - TREAT_Y) * h);
           }
           node.style.visibility = "hidden";
           const id = tr.id;

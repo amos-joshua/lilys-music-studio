@@ -102,4 +102,12 @@ src/config/theme.ts        sprites + piano sticker colours (shared with singing-
 src/config/settings.ts     defaults and engine constants
 ```
 
-OpenMoji sprites (CC BY-SA 4.0) are vendored in `src/assets/openmoji/` so the app works offline.
+## Credits
+
+All assets are vendored so the app works offline.
+
+- **Sprites** — [OpenMoji](https://openmoji.org/), CC BY-SA 4.0, in `src/assets/openmoji/`.
+- **"Hey!" sample** — [`En-us-hey.ogg`](https://commons.wikimedia.org/wiki/File:En-us-hey.ogg) by
+  Dvortygirl via Wikimedia Commons, **public domain** (no attribution required; recorded here
+  anyway). Trimmed, high-passed, pitched up 12%, compressed and limited, then encoded to mono
+  96kbps MP3 — 4.7KB. `AudioEngine.hey()` falls back to a synthesised shout until it decodes.

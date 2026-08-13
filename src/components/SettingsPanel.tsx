@@ -114,8 +114,8 @@ export function SettingsPanel({ settings, onChange, onClose }: Props) {
       <h3>Sound</h3>
       <Toggle label="Sound effects" value={settings.sound} onChange={(v) => onChange({ sound: v })} />
       <Toggle label="Metronome click" value={settings.metronome} onChange={(v) => onChange({ metronome: v })} />
-      <Toggle label={'Shout "hey!" on every 4th beat'} value={settings.heyBeat} onChange={(v) => onChange({ heyBeat: v })} />
-      <p className="hint">Drum Jump. Fires on any hit that lands nearest a downbeat, caught or not.</p>
+      <Toggle label={'Shout "hey!" every 4th hit'} value={settings.heyBeat} onChange={(v) => onChange({ heyBeat: v })} />
+      <p className="hint">Drum Jump. Counts hits, caught or not; a long pause restarts the count.</p>
 
       <h3>Timing</h3>
       <Slider
