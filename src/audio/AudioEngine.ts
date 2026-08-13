@@ -21,7 +21,16 @@ export class AudioEngine {
       this.ctx = new Ctor({ latencyHint: "interactive" });
       this.master = this.ctx.createGain();
       this.master.gain.value = 0.9;
-      this.master.connect(this.ctx.destination);
+      // Safety limiter, so overlapping sounds cannot clip and the shout can
+      // run at full gain without having to be mixed down defensively.
+      const limiter = this.ctx.createDynamicsCompressor();
+      limiter.threshold.value = -6;
+      limiter.knee.value = 6;
+      limiter.ratio.value = 12;
+      limiter.attack.value = 0.003;
+      limiter.release.value = 0.15;
+      this.master.connect(limiter);
+      limiter.connect(this.ctx.destination);
     }
     if (this.ctx.state === "suspended") void this.ctx.resume();
     this.syncClock(true);
@@ -146,7 +155,7 @@ export class AudioEngine {
     const src = ctx.createBufferSource();
     src.buffer = this.heyBuffer;
     const g = ctx.createGain();
-    g.gain.value = 0.85;
+    g.gain.value = 1;
     src.connect(g);
     g.connect(this.master);
     src.start(Math.max(at, ctx.currentTime));

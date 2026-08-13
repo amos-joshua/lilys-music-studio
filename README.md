@@ -107,7 +107,7 @@ src/config/settings.ts     defaults and engine constants
 All assets are vendored so the app works offline.
 
 - **Sprites** — [OpenMoji](https://openmoji.org/), CC BY-SA 4.0, in `src/assets/openmoji/`.
-- **"Hey!" sample** — [`En-us-hey.ogg`](https://commons.wikimedia.org/wiki/File:En-us-hey.ogg) by
-  Dvortygirl via Wikimedia Commons, **public domain** (no attribution required; recorded here
-  anyway). Trimmed, high-passed, pitched up 12%, compressed and limited, then encoded to mono
-  96kbps MP3 — 4.7KB. `AudioEngine.hey()` falls back to a synthesised shout until it decodes.
+- **"Hey!" sample** — ["Men Shouting Hey.wav"](https://freesound.org/people/Jace/sounds/57204/)
+  by Jace via Freesound, **CC0** (no attribution required; recorded here anyway). Trimmed to the
+  shout, high-passed, pitched up 10%, compressed and limited, then encoded to stereo 96kbps MP3
+  — 6.6KB. `AudioEngine.hey()` falls back to a synthesised shout until it decodes.
