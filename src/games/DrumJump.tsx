@@ -37,7 +37,12 @@ interface Burst {
   x: number;
   y: number;
   perfect: boolean;
+  /** Stars fly outwards; sparkles just puff upwards. */
+  star?: { dx: number; dy: number };
 }
+
+/** A hit or a catch counts as a downbeat when its beat is a multiple of this. */
+const BEATS_PER_BAR = 4;
 
 interface Props {
   settings: Settings;
@@ -78,6 +83,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
   const scheduledBeat = useRef(-1);
   const shownBeat = useRef(-1);
   const lastHit = useRef({ t: -99, scored: false });
+  const lastHeyBeat = useRef(-1);
   const offsetMs = useRef(settings.latencyOffsetMs);
   const errors = useRef<number[]>([]);
   const streak = useRef(0);
@@ -146,6 +152,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
     removed.current.clear();
     scheduledBeat.current = -1;
     shownBeat.current = -1;
+    lastHeyBeat.current = -1;
     errors.current = [];
     streak.current = 0;
     caught.current = 0;
@@ -161,6 +168,22 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
     const id = burstId.current++;
     setBursts((prev) => [...prev, { id, x, y, perfect }]);
     setTimeout(() => setBursts((prev) => prev.filter((b) => b.id !== id)), 700);
+  }, []);
+
+  /** Extra reward for catching a treat that sits on the downbeat. */
+  const addStars = useCallback((x: number, y: number) => {
+    const made: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI * 2 * i) / 6 + Math.random() * 0.4;
+      const dist = 5 + Math.random() * 4;
+      const id = burstId.current++;
+      made.push(id);
+      setBursts((prev) => [
+        ...prev,
+        { id, x, y, perfect: false, star: { dx: Math.cos(angle) * dist, dy: Math.sin(angle) * dist } },
+      ]);
+    }
+    setTimeout(() => setBursts((prev) => prev.filter((b) => !made.includes(b.id))), 900);
   }, []);
 
   const onHit = useCallback(
@@ -187,6 +210,15 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
       jumpStart.current = raw;
       jumpScale.current = s.velocityJump ? 0.78 + (hit.velocity / 127) * 0.5 : 1;
       audio.thump(audio.now + 0.005, hit.velocity);
+
+      // Shout on the downbeat whether or not a treat was caught. Quantising to
+      // the nearest beat means near-misses still count, but hits half a beat
+      // away belong to a different beat and stay silent.
+      const nearBeat = g.nearestIndex(t);
+      if (s.heyBeat && nearBeat % BEATS_PER_BAR === 0 && nearBeat !== lastHeyBeat.current) {
+        lastHeyBeat.current = nearBeat;
+        audio.hey(audio.now + 0.01);
+      }
 
       const hitWindow = s.hitWindowMs / 1000;
       let target: Treat | null = null;
@@ -299,6 +331,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
           if (tr.state === "caught") {
             audio.chomp(audio.now + 0.005, tr.perfect);
             addBurst(CATCH_X * w, (1 - TREAT_Y) * h, tr.perfect);
+            if (tr.beat % BEATS_PER_BAR === 0) addStars(CATCH_X * w, (1 - TREAT_Y) * h);
           }
           node.style.visibility = "hidden";
           const id = tr.id;
@@ -348,7 +381,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [phase, addBurst]);
+  }, [phase, addBurst, addStars]);
 
   const total = settings.treatCount;
 
@@ -397,10 +430,15 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
         {bursts.map((b) => (
           <div
             key={b.id}
-            className={"burst" + (b.perfect ? " perfect" : "")}
-            style={{ transform: `translate3d(${b.x}px, ${b.y}px, 0)` }}
+            className={"burst" + (b.perfect ? " perfect" : "") + (b.star ? " star" : "")}
+            style={
+              {
+                transform: `translate3d(${b.x}px, ${b.y}px, 0)`,
+                ...(b.star ? { "--dx": `${b.star.dx}vh`, "--dy": `${b.star.dy}vh` } : {}),
+              } as React.CSSProperties
+            }
           >
-            <img src={ICONS.sparkles} alt="" />
+            <img src={b.star ? ICONS.star : ICONS.sparkles} alt="" />
           </div>
         ))}
 

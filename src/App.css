@@ -347,6 +347,26 @@ main {
   height: 16vh;
 }
 
+.burst.star img {
+  width: 7vh;
+  height: 7vh;
+  animation: starFly 0.9s cubic-bezier(0.18, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes starFly {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.15) rotate(160deg);
+  }
+}
+
 @keyframes burst {
   0% {
     opacity: 1;

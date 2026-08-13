@@ -31,6 +31,12 @@ export class BeatGrid {
     return this.times[index];
   }
 
+  /** Beat index closest to t, so a hit can be quantised to the grid. */
+  nearestIndex(t: number): number {
+    const i = Math.max(0, this.indexAt(t));
+    return t - this.timeOf(i) <= this.timeOf(i + 1) - t ? i : i + 1;
+  }
+
   /** Highest beat index whose time is <= t (may be negative before the anchor). */
   indexAt(t: number): number {
     let i = 0;

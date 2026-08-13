@@ -117,6 +117,43 @@ export class AudioEngine {
     if (perfect) this.tone(at + 0.14, 1760, 0.16, 0.12, "sine");
   }
 
+  /**
+   * Shouted "hey!" on the downbeat — a sawtooth through a sweeping bandpass
+   * formant gives it a vowel-ish shape, over a clap transient. Marks the pulse
+   * far more clearly than another click would.
+   */
+  hey(at: number) {
+    const ctx = this.ctx;
+    if (!ctx || !this.master || this.muted) return;
+    const t = Math.max(at, ctx.currentTime);
+
+    const osc = ctx.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(300, t);
+    osc.frequency.linearRampToValueAtTime(560, t + 0.05);
+    osc.frequency.linearRampToValueAtTime(370, t + 0.26);
+
+    const formant = ctx.createBiquadFilter();
+    formant.type = "bandpass";
+    formant.Q.value = 3.5;
+    formant.frequency.setValueAtTime(700, t);
+    formant.frequency.linearRampToValueAtTime(1500, t + 0.06);
+    formant.frequency.linearRampToValueAtTime(900, t + 0.26);
+
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.3, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+
+    osc.connect(formant);
+    formant.connect(g);
+    g.connect(this.master);
+    osc.start(t);
+    osc.stop(t + 0.32);
+
+    this.noise(t, 0.05, 0.16, 1800);
+  }
+
   /** Piano-ish note. The controller may be silent, so the app has to sound it. */
   piano(at: number, freq: number, velocity = 100) {
     const gain = 0.1 + (velocity / 127) * 0.14;

@@ -8,6 +8,8 @@ export interface Settings {
   tempoRamp: boolean;
   sound: boolean;
   metronome: boolean;
+  /** Shout "hey!" whenever a hit lands nearest a downbeat. */
+  heyBeat: boolean;
   latencyOffsetMs: number;
   autoCalibrate: boolean;
   animalId: string;
@@ -32,6 +34,7 @@ export const DEFAULT_SETTINGS: Settings = {
   tempoRamp: false,
   sound: true,
   metronome: true,
+  heyBeat: true,
   latencyOffsetMs: 0,
   autoCalibrate: true,
   animalId: "lion",
