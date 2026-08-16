@@ -10,7 +10,10 @@ import {
   BOAT_THRUST,
   BOAT_TURN,
   BOAT_TURN_DRAG,
+  BOAT_BANK_MAX,
+  BOAT_BANK_PER_RAD,
   BOAT_SPRITE_OFFSET_DEG,
+  BOAT_VISUAL_LAG,
   BOAT_V_MAX,
   FRUIT_CATCH,
   FRUIT_RADIUS,
@@ -72,6 +75,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
 
   const pos = useRef({ x: 0.5, y: 0.5 });
   const heading = useRef(0); // radians, 0 = pointing up
+  const shownHeading = useRef(0); // lagged copy, used only for drawing
   const speed = useRef(0);
   const omega = useRef(0);
   const lastFrame = useRef(0);
@@ -137,6 +141,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
     }
     pos.current = { x: asp / 2, y: 0.5 };
     heading.current = 0;
+    shownHeading.current = 0;
     speed.current = 0;
     omega.current = 0;
     lastFrame.current = 0;
@@ -268,14 +273,25 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
         setFruit(placeFruit(asp, padsRef.current, pos.current));
       }
 
+      // Visual only: the drawn hull chases the real heading, and the lag it
+      // builds up during a turn doubles as the bank angle.
+      const lag = heading.current - shownHeading.current;
+      shownHeading.current += lag * (1 - Math.exp(-BOAT_VISUAL_LAG * dt));
+      const bank = Math.max(
+        -BOAT_BANK_MAX,
+        Math.min(BOAT_BANK_MAX, (heading.current - shownHeading.current) * BOAT_BANK_PER_RAD)
+      );
+
       const b = boatRef.current;
       if (b) {
-        const bank = Math.max(-18, Math.min(18, omega.current * 7));
         b.style.transform =
           `translate3d(${pos.current.x * h}px, ${pos.current.y * h}px, 0) ` +
-          `rotate(${(th * 180) / Math.PI + BOAT_SPRITE_OFFSET_DEG}deg)`;
+          `rotate(${(shownHeading.current * 180) / Math.PI + BOAT_SPRITE_OFFSET_DEG}deg)`;
         const img = b.firstElementChild as HTMLElement | null;
-        if (img) img.style.transform = `translate(-50%, -50%) rotate(${bank}deg) scaleX(${1 - Math.abs(bank) / 90})`;
+        if (img) {
+          img.style.transform =
+            `translate(-50%, -50%) rotate(${bank}deg) scaleX(${1 - Math.abs(bank) / 90})`;
+        }
       }
     };
 
@@ -359,7 +375,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
           style={{
             transform:
               `translate3d(${px(shown.x)}px, ${px(shown.y)}px, 0) ` +
-              `rotate(${(heading.current * 180) / Math.PI + BOAT_SPRITE_OFFSET_DEG}deg)`,
+              `rotate(${(shownHeading.current * 180) / Math.PI + BOAT_SPRITE_OFFSET_DEG}deg)`,
           }}
         >
           <img src={BOAT.boat} alt="Boat" draggable={false} style={{ height: px(BOAT_LENGTH * 1.25) }} />

@@ -64,6 +64,19 @@ re-bump every frame; a positional push-out still runs continuously.
 The Kenney sprite's pointed bow is at the *bottom* of the image, so `BOAT_SPRITE_OFFSET_DEG`
 turns it around — without it the boat sails stern-first.
 
+The hull is drawn at a lagged copy of the heading rather than the real one, and the size of
+that lag *is* the bank angle — so one smoothed value gives both an eased rotation and a bank
+that swells and settles by itself. A tap steps `omega` instantly, which otherwise snapped the
+bank to full tilt in a single frame:
+
+```
+                peak bank   worst per-frame step
+before              16.2deg              16.20deg
+after               16.5deg               5.24deg
+```
+
+Same peak tilt, same final heading, movement untouched — only the drawing is smoothed.
+
 ### Note Muncher
 
 A real treble staff drawn horizontally, with middle C as a permanent dim line rather than

@@ -68,6 +68,19 @@ export const BOAT_LENGTH = 0.13;
 export const BOAT_MARGIN = 0.095; // keeps pads and fruit clear of the wrap seam
 /** The Kenney sprite's pointed bow is at the bottom, so it needs turning around. */
 export const BOAT_SPRITE_OFFSET_DEG = 180;
+
+/**
+ * Purely visual smoothing. A tap steps `omega` instantly, so drawing the hull
+ * at the true heading makes the rotation start and stop abruptly. The sprite
+ * instead chases the real heading with a short lag, and the size of that lag —
+ * which grows as a turn begins and decays as it ends — *is* the bank angle. One
+ * smoothed value gives both an eased rotation and a bank that swells and
+ * settles by itself. Movement still uses the true heading, so nothing about how
+ * the boat actually travels changes.
+ */
+export const BOAT_VISUAL_LAG = 9; // per second; the sprite catches up in ~0.33s
+export const BOAT_BANK_PER_RAD = 158; // tuned to keep the previous ~16.5deg peak bank
+export const BOAT_BANK_MAX = 20;
 export const FRUIT_RADIUS = 0.075;
 export const FRUIT_CATCH = 0.135; // generous
 export const PAD_MIN_R = 0.06;
