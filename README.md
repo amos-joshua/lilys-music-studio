@@ -39,9 +39,30 @@ A drum pad cannot tell us which stick is which, so sides are learned: the first 
 seen becomes right, the next left, alternating, remembered for the session. The `⇄` button in
 the HUD flips every assignment at once, for when the first hit was the wrong hand.
 
-Lily pads deflect rather than block — inside `pad.r + BOAT_RADIUS − PAD_OVERLAP` the boat is
-pushed out by a fraction of the penetration each frame and steered away, so it slides around
-while still overlapping a little.
+The water **wraps** on both axes, so the boat can never be cornered. Distances to pads and
+fruit use the shortest wrapping delta, so a fruit just across the seam is genuinely near.
+Pads and fruit are placed clear of the edges so nothing is drawn half-off.
+
+Lily pads preserve momentum. On first contact the angle between the boat's heading and the
+line to the pad's centre decides the response — measured:
+
+```
+approach   response       speed after   turned away
+     0deg  HEAD-ON bump        -0.080         0.0deg
+     9deg  HEAD-ON bump        -0.080         0.0deg
+    10deg  glance               0.320        31.0deg
+    45deg  glance               0.320        22.3deg
+    89deg  glance               0.320         0.5deg
+   100deg  none (heading away)  0.400         0.0deg
+```
+
+So a square-on hit bumps back and stalls, while anything glancing keeps 80% of its speed and
+is turned away from the line of centres by an amount that scales with how head-on it was.
+Contact is edge-triggered with hysteresis (`PAD_RELEASE`), so resting against a pad does not
+re-bump every frame; a positional push-out still runs continuously.
+
+The Kenney sprite's pointed bow is at the *bottom* of the image, so `BOAT_SPRITE_OFFSET_DEG`
+turns it around — without it the boat sails stern-first.
 
 ### Note Muncher
 

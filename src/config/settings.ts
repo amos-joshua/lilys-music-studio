@@ -65,15 +65,28 @@ export const BOAT_TURN = 2.6; // rad/s added per tap
 export const BOAT_TURN_DRAG = 7; // exponential; ~21 degrees per single tap
 export const BOAT_RADIUS = 0.05;
 export const BOAT_LENGTH = 0.13;
-export const BOAT_MARGIN = 0.095; // clears the boat's half-length so it never clips the edge
-export const BOAT_WALL_LOSS = 0.45;
+export const BOAT_MARGIN = 0.095; // keeps pads and fruit clear of the wrap seam
+/** The Kenney sprite's pointed bow is at the bottom, so it needs turning around. */
+export const BOAT_SPRITE_OFFSET_DEG = 180;
 export const FRUIT_RADIUS = 0.075;
 export const FRUIT_CATCH = 0.135; // generous
-export const PAD_MIN_R = 0.085;
-export const PAD_MAX_R = 0.14;
+export const PAD_MIN_R = 0.06;
+export const PAD_MAX_R = 0.098;
 export const PAD_OVERLAP = 0.035; // how far in before the boat is nudged out
 export const PAD_PUSH = 0.35; // fraction of penetration corrected per frame
-export const PAD_STEER = 1.6; // rad/s nudge away from a pad
+
+/**
+ * Lily pads preserve momentum rather than stopping the boat. On first contact
+ * the angle between the boat's heading and the line to the pad's centre decides
+ * what happens: within HEAD_ON of dead-on it is a real bump, otherwise the boat
+ * keeps most of its speed and is turned away from that line.
+ */
+export const PAD_HEAD_ON_DEG = 10;
+export const PAD_HEAD_ON_COS = Math.cos((PAD_HEAD_ON_DEG * Math.PI) / 180);
+export const PAD_BUMP_BACK = 0.08; // brief reverse on a head-on hit
+export const PAD_KEEP = 0.8; // speed retained on a glancing one
+export const PAD_DEFLECT = 0.55; // radians of turn-away, scaled by how head-on it is
+export const PAD_RELEASE = 1.2; // hysteresis before the same pad can bump again
 
 // Note Muncher layout, in fractions of the arena.
 export const STAFF_BASE = 0.17; // middle C, measured from the bottom

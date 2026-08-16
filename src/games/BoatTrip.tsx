@@ -10,15 +10,19 @@ import {
   BOAT_THRUST,
   BOAT_TURN,
   BOAT_TURN_DRAG,
+  BOAT_SPRITE_OFFSET_DEG,
   BOAT_V_MAX,
-  BOAT_WALL_LOSS,
   FRUIT_CATCH,
   FRUIT_RADIUS,
+  PAD_BUMP_BACK,
+  PAD_DEFLECT,
+  PAD_HEAD_ON_COS,
+  PAD_KEEP,
   PAD_MAX_R,
   PAD_MIN_R,
   PAD_OVERLAP,
   PAD_PUSH,
-  PAD_STEER,
+  PAD_RELEASE,
 } from "../config/settings";
 import type { Settings } from "../config/settings";
 import type { NoteHit } from "../midi/types";
@@ -46,6 +50,12 @@ interface Props {
 }
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
+const wrap = (v: number, span: number) => ((v % span) + span) % span;
+/** Shortest signed distance a - b on a wrapping axis. */
+const delta = (a: number, b: number, span: number) => {
+  const d = a - b;
+  return d > span / 2 ? d - span : d < -span / 2 ? d + span : d;
+};
 
 export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Props) {
   const [phase, setPhase] = useState<"ready" | "playing">("ready");
@@ -68,6 +78,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
   const phaseRef = useRef<"ready" | "playing">("ready");
   const padsRef = useRef<Pad[]>([]);
   const fruitRef = useRef(fruit);
+  const contact = useRef(new Set<number>());
   const sideMap = useRef(new Map<number, Side>());
   const nextSide = useRef<Side>(1);
   const rippleId = useRef(0);
@@ -129,6 +140,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
     speed.current = 0;
     omega.current = 0;
     lastFrame.current = 0;
+    contact.current.clear();
     padsRef.current = made;
     setPads(made);
     setFruit(placeFruit(asp, made, pos.current));
@@ -207,38 +219,49 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
       pos.current.x += Math.sin(th) * speed.current * dt;
       pos.current.y += -Math.cos(th) * speed.current * dt;
 
-      // Lily pads deflect rather than block; overlapping a little is fine.
-      for (const p of padsRef.current) {
-        const dx = pos.current.x - p.x;
-        const dy = pos.current.y - p.y;
+      // The water wraps, so the boat can never be cornered.
+      pos.current.x = wrap(pos.current.x, asp);
+      pos.current.y = wrap(pos.current.y, 1);
+
+      // Lily pads keep the boat moving; only a near head-on hit really stops it.
+      const pads2 = padsRef.current;
+      for (let i = 0; i < pads2.length; i++) {
+        const p = pads2[i];
+        const dx = delta(pos.current.x, p.x, asp);
+        const dy = delta(pos.current.y, p.y, 1);
         const d = Math.hypot(dx, dy) || 1e-6;
         const touch = p.r + BOAT_RADIUS - PAD_OVERLAP;
-        if (d < touch) {
-          const push = (touch - d) * PAD_PUSH;
-          pos.current.x += (dx / d) * push;
-          pos.current.y += (dy / d) * push;
-          // Steer away from the pad, whichever way needs the smaller turn.
-          const cross = Math.sin(th) * (dy / d) - -Math.cos(th) * (dx / d);
-          omega.current += Math.sign(cross || 1) * PAD_STEER * dt;
-          speed.current *= 1 - 0.9 * dt;
-        }
-      }
 
-      // Edges
-      const lo = BOAT_MARGIN;
-      const hiX = asp - BOAT_MARGIN;
-      const clamped = {
-        x: Math.max(lo, Math.min(hiX, pos.current.x)),
-        y: Math.max(lo, Math.min(1 - lo, pos.current.y)),
-      };
-      if (clamped.x !== pos.current.x || clamped.y !== pos.current.y) {
-        pos.current = clamped;
-        speed.current *= BOAT_WALL_LOSS;
+        if (d >= touch) {
+          if (d > touch * PAD_RELEASE) contact.current.delete(i);
+          continue;
+        }
+
+        const nx = dx / d;
+        const ny = dy / d; // outward, pad -> boat
+        pos.current.x += nx * (touch - d) * PAD_PUSH;
+        pos.current.y += ny * (touch - d) * PAD_PUSH;
+
+        if (contact.current.has(i)) continue;
+        contact.current.add(i);
+
+        const dirX = Math.sin(th);
+        const dirY = -Math.cos(th);
+        const align = -(dirX * nx + dirY * ny); // cos of angle to the pad's centre
+        if (align <= 0) continue; // already heading away
+
+        if (align > PAD_HEAD_ON_COS) {
+          speed.current = -PAD_BUMP_BACK; // square on: bump back and stall
+        } else {
+          speed.current *= PAD_KEEP;
+          const cross = dirX * -ny - dirY * -nx;
+          heading.current -= Math.sign(cross || 1) * PAD_DEFLECT * align;
+        }
       }
 
       // Fruit
       const f = fruitRef.current;
-      if (Math.hypot(pos.current.x - f.x, pos.current.y - f.y) < FRUIT_CATCH) {
+      if (Math.hypot(delta(pos.current.x, f.x, asp), delta(pos.current.y, f.y, 1)) < FRUIT_CATCH) {
         audio.chomp(audio.now + 0.005, true);
         addSpark(f.x, f.y);
         setScore((n) => n + 1);
@@ -250,7 +273,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
         const bank = Math.max(-18, Math.min(18, omega.current * 7));
         b.style.transform =
           `translate3d(${pos.current.x * h}px, ${pos.current.y * h}px, 0) ` +
-          `rotate(${(th * 180) / Math.PI}deg)`;
+          `rotate(${(th * 180) / Math.PI + BOAT_SPRITE_OFFSET_DEG}deg)`;
         const img = b.firstElementChild as HTMLElement | null;
         if (img) img.style.transform = `translate(-50%, -50%) rotate(${bank}deg) scaleX(${1 - Math.abs(bank) / 90})`;
       }
@@ -336,7 +359,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
           style={{
             transform:
               `translate3d(${px(shown.x)}px, ${px(shown.y)}px, 0) ` +
-              `rotate(${(heading.current * 180) / Math.PI}deg)`,
+              `rotate(${(heading.current * 180) / Math.PI + BOAT_SPRITE_OFFSET_DEG}deg)`,
           }}
         >
           <img src={BOAT.boat} alt="Boat" draggable={false} style={{ height: px(BOAT_LENGTH * 1.25) }} />
