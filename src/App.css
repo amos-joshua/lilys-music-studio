@@ -332,6 +332,7 @@ main {
   top: 0;
   left: 0;
   pointer-events: none;
+  z-index: 3;
 }
 
 .burst img {
@@ -403,6 +404,7 @@ main {
   backdrop-filter: blur(4px);
   text-align: center;
   padding: 1rem;
+  z-index: 5; /* above sprites, which set their own stacking */
 }
 
 .overlay h2 {
@@ -467,7 +469,8 @@ main {
   margin: 0.2rem 0;
 }
 
-.big {
+/* Scoped to buttons: `.field.big` is a large slider and must not pick this up. */
+button.big {
   border: none;
   border-radius: 1rem;
   padding: 0.9rem 2.2rem;
@@ -477,13 +480,117 @@ main {
   color: #1b2145;
 }
 
-.big.alt {
+button.big.alt {
   background: var(--accent-2);
 }
 
-.big.alt2 {
+button.big.alt2 {
   background: rgba(255, 255, 255, 0.14);
   color: var(--ink);
+}
+
+/* ---- boat trip ---- */
+.water {
+  background:
+    radial-gradient(120% 90% at 30% 20%, #4a93d6 0%, #2f6fae 55%, #245a92 100%);
+}
+
+.water::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: repeating-linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.05) 0 2px,
+    rgba(255, 255, 255, 0) 2px 42px
+  );
+  animation: swell 14s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes swell {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(42px);
+  }
+}
+
+.lilypad {
+  position: absolute;
+  filter: drop-shadow(0 0.2rem 0.35rem rgba(0, 0, 0, 0.25));
+}
+
+.boatFruit {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  animation: fruitBob 1.9s ease-in-out infinite;
+  filter: drop-shadow(0 0.25rem 0.4rem rgba(0, 0, 0, 0.3));
+  z-index: 1;
+}
+
+@keyframes fruitBob {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -54%) scale(1.06);
+  }
+}
+
+.boat {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+  z-index: 2;
+}
+
+.boat img {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0.3rem 0.45rem rgba(0, 0, 0, 0.35));
+}
+
+.ripple {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  animation: rippleOut 0.65s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes rippleOut {
+  from {
+    width: 0.4vh;
+    height: 0.4vh;
+    margin: -0.2vh;
+    opacity: 0.85;
+  }
+  to {
+    width: 7vh;
+    height: 7vh;
+    margin: -3.5vh;
+    opacity: 0;
+  }
+}
+
+.padMap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.padMap .off {
+  opacity: 0.35;
 }
 
 /* ---- note muncher ---- */

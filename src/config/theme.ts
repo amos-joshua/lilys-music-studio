@@ -16,6 +16,8 @@ import star from "../assets/openmoji/star.svg";
 import drum from "../assets/openmoji/drum.svg";
 import piano from "../assets/openmoji/piano.svg";
 import trophy from "../assets/openmoji/trophy.svg";
+import boatSrc from "../assets/boat/boat.png";
+import lilypadSrc from "../assets/boat/lilypad.svg";
 
 // Piano key sticker colours (matches the stickers on Lily's piano).
 export const NOTE_COLORS: Record<string, string> = {
@@ -65,4 +67,9 @@ export const TREAT_SETS: { id: string; name: string; items: Sprite[] }[] = [
   },
 ];
 
-export const ICONS = { sparkles, star, drum, piano, trophy, icecream };
+export const ICONS = { sparkles, star, drum, piano, trophy, icecream, boat: boatSrc };
+
+export const BOAT = { boat: boatSrc, lilypad: lilypadSrc };
+
+/** Every edible sprite, for modes that just want variety. */
+export const ALL_TREATS: Sprite[] = TREAT_SETS.flatMap((s) => s.items);

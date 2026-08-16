@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { DrumJump } from "./games/DrumJump";
 import { HillClimb } from "./games/HillClimb";
 import { NoteMuncher } from "./games/NoteMuncher";
+import { BoatTrip } from "./games/BoatTrip";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { MidiMonitor } from "./components/MidiMonitor";
 import { useMidi } from "./midi/useMidi";
@@ -11,7 +12,7 @@ import type { Settings } from "./config/settings";
 import { ICONS } from "./config/theme";
 import "./App.css";
 
-type Mode = "home" | "drum" | "hill" | "staff";
+type Mode = "home" | "drum" | "hill" | "staff" | "boat";
 
 const MODES = [
   {
@@ -29,6 +30,13 @@ const MODES = [
     ready: true,
   },
   {
+    id: "boat" as const,
+    name: "Boat Trip",
+    blurb: "Paddle left and right to steer the boat to the fruit.",
+    icon: ICONS.boat,
+    ready: true,
+  },
+  {
     id: "staff" as const,
     name: "Note Muncher",
     blurb: "Coloured bars drift along a staff. Play them and the lion eats them.",
@@ -40,7 +48,11 @@ const MODES = [
 export default function App() {
   // Key is versioned: bump it when a default changes that a stored value would mask.
   const [settings, setSettings] = useStoredState<Settings>("lms-settings-v2", DEFAULT_SETTINGS);
-  const [mode, setMode] = useState<Mode>("home");
+  // ?mode=boat opens straight into a mode — handy for bookmarking on the iPad.
+  const [mode, setMode] = useState<Mode>(() => {
+    const m = new URLSearchParams(window.location.search).get("mode");
+    return MODES.some((x) => x.id === m && x.ready) ? (m as Mode) : "home";
+  });
   const [sheet, setSheet] = useState<"none" | "settings" | "monitor">("none");
   const { log, sources, lastHit, subscribe, injectHit, clearLog } = useMidi(settings.bridgeWsUrl);
 
@@ -104,6 +116,15 @@ export default function App() {
             onSettingsChange={patch}
             subscribe={subscribe}
             injectHit={injectHit}
+            onExit={() => setMode("home")}
+          />
+        )}
+
+        {mode === "boat" && (
+          <BoatTrip
+            settings={settings}
+            onSettingsChange={patch}
+            subscribe={subscribe}
             onExit={() => setMode("home")}
           />
         )}

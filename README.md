@@ -15,13 +15,33 @@ npm run build
 | --- | --- |
 | **Drum Jump** — treats arrive on the beat, the animal leaps for them | playable |
 | **Hill Climb** — drum fast to climb; stop and the animal slides back | playable |
+| **Boat Trip** — paddle left and right to steer a boat to the fruit | playable |
 | **Note Muncher** — coloured bars on a treble staff, played to be eaten | playable |
+
+Append `?mode=drum|hill|boat|staff` to open straight into a mode.
 
 Drum Jump is about precision and runs on the beat grid. Hill Climb is about sustained
 rate and has no rhythm requirement at all — sporadic hits count exactly as much as even
 ones. Its physics live in `config/settings.ts` (`HILL_*`) and are tuned by simulation:
 uphill speed is capped low and bled off in about half a second, downhill acceleration is
 slow, and any hit always leaves the animal moving forwards however fast it was sliding.
+
+### Boat Trip
+
+Top-down boat on open water. A tap adds forward thrust plus an angular impulse whose sign is
+the pad's side; speed bleeds off fast (9% left after a second), so progress needs continuous
+paddling. **Hitting both pads together needs no special case** — the two angular impulses
+cancel while the thrusts add, which is exactly "go straight, faster". Measured: two taps 40ms
+apart net 0.0° of turn at double the distance, and alternating left/right paddling tracks
+straight to within a couple of degrees, like real paddling. One tap alone turns ~20°.
+
+A drum pad cannot tell us which stick is which, so sides are learned: the first note number
+seen becomes right, the next left, alternating, remembered for the session. The `⇄` button in
+the HUD flips every assignment at once, for when the first hit was the wrong hand.
+
+Lily pads deflect rather than block — inside `pad.r + BOAT_RADIUS − PAD_OVERLAP` the boat is
+pushed out by a fraction of the penetration each frame and steered away, so it slides around
+while still overlapping a little.
 
 ### Note Muncher
 
@@ -107,6 +127,10 @@ src/config/settings.ts     defaults and engine constants
 All assets are vendored so the app works offline.
 
 - **Sprites** — [OpenMoji](https://openmoji.org/), CC BY-SA 4.0, in `src/assets/openmoji/`.
+- **Boat** — [Pirate Pack](https://kenney.nl/assets/pirate-pack) by Kenney, **CC0**. One
+  top-down sailboat (`ship (1)`, the plain-sailed one — the pack's others carry skulls).
+- **Lily pad** — drawn for this project, `src/assets/boat/lilypad.svg`. One asset rotated per
+  pad rather than several variants.
 - **"Hey!" sample** — ["Men Shouting Hey.wav"](https://freesound.org/people/Jace/sounds/57204/)
   by Jace via Freesound, **CC0** (no attribution required; recorded here anyway). Trimmed to the
   shout, high-passed, pitched up 10%, compressed and limited, then encoded to stereo 96kbps MP3

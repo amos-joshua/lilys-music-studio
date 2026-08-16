@@ -22,6 +22,8 @@ export interface Settings {
   /** Note Muncher: which tune, and whether the octave has to match. */
   melodyId: string;
   staffAnyOctave: boolean;
+  /** Boat Trip: how many lily pads clutter the water. */
+  boatPads: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -45,7 +47,33 @@ export const DEFAULT_SETTINGS: Settings = {
   hillBrake: 0.36,
   melodyId: "up-down",
   staffAnyOctave: true,
+  boatPads: 5,
 };
+
+/**
+ * Boat Trip physics. Positions and speeds are in units of the arena height, so
+ * motion is isotropic regardless of aspect ratio: x runs 0..(width/height).
+ *
+ * A tap adds forward thrust and an angular impulse whose sign is the pad's
+ * side. Tapping both sides at once needs no special case — the two angular
+ * impulses cancel and the thrusts add, which is exactly "go straight, faster".
+ */
+export const BOAT_THRUST = 0.26;
+export const BOAT_V_MAX = 0.55;
+export const BOAT_DRAG = 2.4; // exponential; speed halves in ~0.29s
+export const BOAT_TURN = 2.6; // rad/s added per tap
+export const BOAT_TURN_DRAG = 7; // exponential; ~21 degrees per single tap
+export const BOAT_RADIUS = 0.05;
+export const BOAT_LENGTH = 0.13;
+export const BOAT_MARGIN = 0.095; // clears the boat's half-length so it never clips the edge
+export const BOAT_WALL_LOSS = 0.45;
+export const FRUIT_RADIUS = 0.075;
+export const FRUIT_CATCH = 0.135; // generous
+export const PAD_MIN_R = 0.085;
+export const PAD_MAX_R = 0.14;
+export const PAD_OVERLAP = 0.035; // how far in before the boat is nudged out
+export const PAD_PUSH = 0.35; // fraction of penetration corrected per frame
+export const PAD_STEER = 1.6; // rad/s nudge away from a pad
 
 // Note Muncher layout, in fractions of the arena.
 export const STAFF_BASE = 0.17; // middle C, measured from the bottom
