@@ -1,0 +1,4 @@
+name: lilys-music-studio
+build:
+  studio-latest: []
+  netlify-deployment: [studio-latest]

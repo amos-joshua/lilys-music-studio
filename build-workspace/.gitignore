@@ -1,0 +1,5 @@
+# Runtime-populated by scripts/<component>/source/clone.sh and
+# scripts/<component>/build/<platform>/<arch-cfg>/run.sh respectively.
+# Nothing under these directories is checked in.
+/source/
+/build/
