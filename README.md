@@ -64,6 +64,13 @@ re-bump every frame; a positional push-out still runs continuously.
 The Kenney sprite's pointed bow is at the *bottom* of the image, so `BOAT_SPRITE_OFFSET_DEG`
 turns it around — without it the boat sails stern-first.
 
+The view is top-down because the hull turns through every angle. A three-quarter or isometric
+boat would need a pre-rendered frame per direction, and the readily available sheets carry 16 —
+22.5deg per step, against the ~20deg a single tap turns. Most taps would not change the frame
+at all and then one would jump a whole step, which is a coarser version of the jerk the
+smoothing below removes. It would also rule out the bank. 32+ frames would be needed to beat
+what free rotation already gives.
+
 The hull is drawn at a lagged copy of the heading rather than the real one, and the size of
 that lag *is* the bank angle — so one smoothed value gives both an eased rotation and a bank
 that swells and settles by itself. A tap steps `omega` instantly, which otherwise snapped the
@@ -163,6 +170,14 @@ All assets are vendored so the app works offline.
 - **Sprites** — [OpenMoji](https://openmoji.org/), CC BY-SA 4.0, in `src/assets/openmoji/`.
 - **Boat** — [Pirate Pack](https://kenney.nl/assets/pirate-pack) by Kenney, **CC0**. One
   top-down sailboat (`ship (1)`, the plain-sailed one — the pack's others carry skulls).
+- **Boat Trip card icon** — the same Kenney boat with its perspective reworked into a
+  three-quarter view by Google Gemini, so credit runs to **Kenney (CC0)** and **Gemini**.
+  Supplied as `iso-boat.jpeg` with a transparency checkerboard flattened into the pixels; that
+  was cut back out by flood-filling inward from the border — plus the patch enclosed by the
+  rigging, which the border flood cannot reach — then resized to 264px and quantised to 128
+  colours, 642KB down to 19KB. The JPEG is kept as the source of record.
+  Used **only** on the picker card. A three-quarter hull cannot be rotated through 360°, so
+  play keeps the top-down sprite; see the note on 16-direction sheets below.
 - **Lily pad** — drawn for this project, `src/assets/boat/lilypad.svg`. One asset rotated per
   pad rather than several variants.
 - **"Hey!" sample** — ["Men Shouting Hey.wav"](https://freesound.org/people/Jace/sounds/57204/)

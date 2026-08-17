@@ -88,6 +88,8 @@ main {
 .card img {
   width: 5.5rem;
   height: 5.5rem;
+  /* Icons are not all square — contain rather than stretch. */
+  object-fit: contain;
 }
 
 .card h2 {

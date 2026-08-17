@@ -17,6 +17,7 @@ import drum from "../assets/openmoji/drum.svg";
 import piano from "../assets/openmoji/piano.svg";
 import trophy from "../assets/openmoji/trophy.svg";
 import boatSrc from "../assets/boat/boat.png";
+import isoBoatSrc from "../assets/boat/iso-boat.png";
 import lilypadSrc from "../assets/boat/lilypad.svg";
 
 // Piano key sticker colours (matches the stickers on Lily's piano).
@@ -67,7 +68,9 @@ export const TREAT_SETS: { id: string; name: string; items: Sprite[] }[] = [
   },
 ];
 
-export const ICONS = { sparkles, star, drum, piano, trophy, icecream, boat: boatSrc };
+// The three-quarter boat is only ever shown still, on the mode picker card —
+// it cannot be used in play, where the hull rotates through every angle.
+export const ICONS = { sparkles, star, drum, piano, trophy, icecream, boat: isoBoatSrc };
 
 export const BOAT = { boat: boatSrc, lilypad: lilypadSrc };
 
