@@ -32,6 +32,7 @@ import palmTree from "../assets/openmoji/palm-tree.svg";
 import evergreenTree from "../assets/openmoji/evergreen-tree.svg";
 import house from "../assets/openmoji/house.svg";
 import hut from "../assets/openmoji/hut.svg";
+import tropicalFish from "../assets/openmoji/tropical-fish.svg";
 import { pickOther, shuffled } from "../game/random";
 
 // Piano key sticker colours (matches the stickers on Lily's piano).
@@ -98,6 +99,7 @@ export const ICONS = { sparkles, star, drum, piano, trophy, icecream, boat: isoB
 export const BOAT = {
   boat: boatSrc,
   lilypad: lilypadSrc,
+  fish: tropicalFish,
   trees: [palmTree, evergreenTree],
   houses: [house, hut],
 };

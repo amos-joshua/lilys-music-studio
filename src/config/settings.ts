@@ -137,6 +137,24 @@ export const WHALE_R = 0.2;
 export const WHALE_SPEED = 0.04; // screen heights per second
 export const WHALE_TURN = 0.25; // radians per second of idle wander
 
+/**
+ * Schools of fish are pure decoration — no collision — and exist only near the
+ * player: one spawns just off the side of the view every so often, darts across
+ * faster than the boat can paddle, and is dropped once it is clear of the view.
+ */
+export const SCHOOL_MAX = 2;
+export const SCHOOL_GAP_MIN = 4; // seconds between schools
+export const SCHOOL_GAP_MAX = 12;
+export const SCHOOL_SPREAD = 0.3; // half-width of the shoal, in screen heights
+export const FISH_MIN = 5;
+export const FISH_MAX = 10;
+export const FISH_SIZE = 0.05;
+export const FISH_SPEED_MIN = 0.6; // BOAT_V_MAX is 0.55, so they always outrun the boat
+export const FISH_SPEED_MAX = 0.95;
+export const FISH_DRIFT = 0.22; // how far off horizontal a school may swim
+/** The sprite swims to the left, so it is flipped when the school goes right. */
+export const FISH_FACING = -1;
+
 /** Fruit is placed near the boat: 25 screens of empty water is not a game. */
 export const FRUIT_NEAR = 1.7;
 export const FRUIT_FAR = 0.55; // ...but never right under the bow

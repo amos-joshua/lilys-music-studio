@@ -21,6 +21,13 @@ import {
   CAM_MARGIN,
   CULL_MARGIN,
   CULL_STEP,
+  FISH_DRIFT,
+  FISH_FACING,
+  FISH_MAX,
+  FISH_MIN,
+  FISH_SIZE,
+  FISH_SPEED_MAX,
+  FISH_SPEED_MIN,
   FRUIT_CATCH,
   FRUIT_FAR,
   FRUIT_NEAR,
@@ -40,6 +47,10 @@ import {
   PAD_OVERLAP,
   PAD_PUSH,
   PAD_RELEASE,
+  SCHOOL_GAP_MAX,
+  SCHOOL_GAP_MIN,
+  SCHOOL_MAX,
+  SCHOOL_SPREAD,
   SHORE,
   SHORE_BUMP,
   WHALE_COUNT,
@@ -70,6 +81,22 @@ interface Decor {
 interface Island extends Pad {
   tone: number;
   decor: Decor[];
+}
+
+interface Fish {
+  ox: number; // offset within the shoal, in screen heights
+  oy: number;
+  size: number;
+  delay: number;
+}
+
+interface School {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  fish: Fish[];
 }
 
 interface Whale {
@@ -119,6 +146,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
   const [shownPads, setShownPads] = useState<Pad[]>([]);
   const [islands, setIslands] = useState<Island[]>([]);
   const [whales, setWhales] = useState<Whale[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
   const [fruit, setFruit] = useState<{ x: number; y: number; sprite: Sprite }>(() => ({
     x: 1,
     y: 0.5,
@@ -135,6 +163,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
   const arrowRef = useRef<HTMLDivElement>(null);
   const arrowTipRef = useRef<HTMLSpanElement>(null);
   const whaleRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const schoolRefs = useRef(new Map<number, HTMLDivElement | null>());
 
   const pos = useRef({ x: 0.5, y: 0.5 });
   const cam = useRef({ x: 0, y: 0 });
@@ -148,6 +177,9 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
   const padsRef = useRef<Pad[]>([]);
   const islandsRef = useRef<Island[]>([]);
   const whalesRef = useRef<Whale[]>([]);
+  const schoolsRef = useRef<School[]>([]);
+  const nextSchool = useRef(0);
+  const schoolId = useRef(0);
   const fruitRef = useRef(fruit);
   const contact = useRef(new Set<string>());
   const sideMap = useRef(new Map<number, Side>());
@@ -160,6 +192,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
   padsRef.current = pads;
   islandsRef.current = islands;
   whalesRef.current = whales;
+  schoolsRef.current = schools;
   fruitRef.current = fruit;
 
   const asp = size.w / size.h || 1.6;
@@ -276,6 +309,9 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
     omega.current = 0;
     lastFrame.current = 0;
     contact.current.clear();
+    schoolsRef.current = [];
+    nextSchool.current = 0;
+    setSchools([]);
     padsRef.current = made;
     islandsRef.current = isles;
     whalesRef.current = pod;
@@ -286,6 +322,32 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
     setScore(0);
     setPhase("playing");
   }, [asp, worldW, worldH, sea.x0, sea.y0, sea.x1, sea.y1, placeFruit]);
+
+  /** A shoal just off one side of the view, aimed across it. */
+  const spawnSchool = useCallback(() => {
+    const c = cam.current;
+    const rightward = Math.random() < 0.5;
+    const speed = rand(FISH_SPEED_MIN, FISH_SPEED_MAX) * (rightward ? 1 : -1);
+    const n = Math.floor(rand(FISH_MIN, FISH_MAX + 1));
+    const fish: Fish[] = [];
+    for (let i = 0; i < n; i++) {
+      fish.push({
+        ox: rand(-SCHOOL_SPREAD, SCHOOL_SPREAD),
+        oy: rand(-SCHOOL_SPREAD, SCHOOL_SPREAD) * 0.55,
+        size: FISH_SIZE * rand(0.75, 1.15),
+        delay: rand(0, 0.6),
+      });
+    }
+    const school: School = {
+      id: schoolId.current++,
+      x: rightward ? c.x - SCHOOL_SPREAD * 2 : c.x + asp + SCHOOL_SPREAD * 2,
+      y: clamp(c.y + rand(0.15, 0.85), sea.y0 + SCHOOL_SPREAD, sea.y1 - SCHOOL_SPREAD),
+      vx: speed,
+      vy: rand(-FISH_DRIFT, FISH_DRIFT) * Math.abs(speed),
+      fish,
+    };
+    setSchools((prev) => [...prev, school]);
+  }, [asp, sea.y0, sea.y1]);
 
   const addRipple = useCallback((x: number, y: number) => {
     const id = rippleId.current++;
@@ -387,6 +449,28 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
             `translate3d(${wl.x * h}px, ${wl.y * h}px, 0) ` +
             `rotate(${(wl.dir * 180) / Math.PI}deg)`;
         }
+      }
+
+      // Fish schools: decoration only, so they are moved and dropped without
+      // ever touching the boat.
+      const now = t / 1000;
+      if (!nextSchool.current) nextSchool.current = now + rand(0, SCHOOL_GAP_MIN);
+      if (now > nextSchool.current && schoolsRef.current.length < SCHOOL_MAX) {
+        nextSchool.current = now + rand(SCHOOL_GAP_MIN, SCHOOL_GAP_MAX);
+        spawnSchool();
+      }
+      const gone: number[] = [];
+      for (const sc of schoolsRef.current) {
+        sc.x += sc.vx * dt;
+        sc.y += sc.vy * dt;
+        const el = schoolRefs.current.get(sc.id);
+        if (el) el.style.transform = `translate3d(${sc.x * h}px, ${sc.y * h}px, 0)`;
+        const edge = SCHOOL_SPREAD * 3;
+        if (sc.x < cam.current.x - edge || sc.x > cam.current.x + asp + edge) gone.push(sc.id);
+      }
+      if (gone.length) {
+        setSchools((prev) => prev.filter((sc) => !gone.includes(sc.id)));
+        gone.forEach((id) => schoolRefs.current.delete(id));
       }
 
       /**
@@ -516,7 +600,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [phase, size, sea.x0, sea.y0, sea.x1, sea.y1, asp, follow, placeFruit, addRipple, addSpark]);
+  }, [phase, size, sea.x0, sea.y0, sea.x1, sea.y1, asp, follow, placeFruit, spawnSchool, addRipple, addSpark]);
 
   const px = (v: number) => v * size.h;
   // Before a run the boat sits mid-water; the world aspect is only known once measured.
@@ -620,6 +704,32 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
                 <ellipse cx="72" cy="30" rx="16" ry="6" fill="#4a6ea8" opacity="0.7" />
                 <circle cx="82" cy="20" r="2.6" fill="#0d1832" />
               </svg>
+            </div>
+          ))}
+
+          {schools.map((sc) => (
+            <div
+              key={sc.id}
+              className="school"
+              ref={(el) => {
+                schoolRefs.current.set(sc.id, el);
+              }}
+              style={{ transform: `translate3d(${px(sc.x)}px, ${px(sc.y)}px, 0)` }}
+            >
+              {sc.fish.map((f, i) => (
+                <img
+                  key={i}
+                  src={BOAT.fish}
+                  alt=""
+                  style={{
+                    left: px(f.ox),
+                    top: px(f.oy),
+                    width: px(f.size),
+                    animationDelay: `${f.delay}s`,
+                    transform: `translate(-50%, -50%) scaleX(${Math.sign(sc.vx) * FISH_FACING})`,
+                  }}
+                />
+              ))}
             </div>
           ))}
 
