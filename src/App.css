@@ -492,12 +492,32 @@ button.big.alt2 {
 }
 
 /* ---- boat trip ---- */
-.water {
-  background:
-    radial-gradient(120% 90% at 30% 20%, #4a93d6 0%, #2f6fae 55%, #245a92 100%);
+.deepWater {
+  background: #1b4670;
 }
 
-.water::after {
+/* The whole world; only its transform moves, so nothing inside re-renders. */
+.world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background:
+    radial-gradient(60% 60% at 30% 30%, #f0dfb2 0%, #e2c98d 60%, #d3b673 100%);
+  will-change: transform;
+}
+
+/* Water inside the beaches; the border is the surf line. */
+.sea {
+  position: absolute;
+  border-radius: 2rem;
+  /* Surf drawn outside the box, so the water is exactly the sailable area. */
+  box-shadow: 0 0 0 1.2vh rgba(255, 255, 255, 0.45);
+  background:
+    radial-gradient(120% 90% at 30% 20%, #4a93d6 0%, #2f6fae 55%, #245a92 100%);
+  overflow: hidden;
+}
+
+.sea::after {
   content: "";
   position: absolute;
   inset: -20%;
@@ -517,6 +537,86 @@ button.big.alt2 {
   to {
     transform: translateX(42px);
   }
+}
+
+.island {
+  position: absolute;
+  border-radius: 46% 54% 52% 48% / 50% 46% 54% 50%;
+  background:
+    radial-gradient(circle at 50% 45%, #63b46a 0 46%, #d9c084 52% 78%, #efe0b6 78% 100%);
+  box-shadow: 0 0 0 0.5vh rgba(255, 255, 255, 0.35), 0 0.4rem 0.8rem rgba(0, 0, 0, 0.25);
+}
+
+.whale {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  display: grid;
+  place-items: center;
+  will-change: transform;
+  filter: drop-shadow(0 0.25rem 0.4rem rgba(0, 0, 0, 0.3));
+}
+
+.whale svg {
+  display: block;
+  transform: translate(-50%, -50%);
+  position: absolute;
+}
+
+/* Screen space: pinned to the view edge, pointing at fruit that is off-view. */
+.fruitArrow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  display: grid;
+  place-items: center;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* A marker, not a fruit: the treat sits faded inside a badge so it never reads
+   as something to paddle at. */
+.fruitArrowBadge {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(10, 24, 48, 0.55);
+  border: 0.35vh solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.35);
+  animation: arrowPulse 1.4s ease-in-out infinite;
+}
+
+.fruitArrowBadge img {
+  opacity: 0.75;
+}
+
+@keyframes arrowPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.09);
+  }
+}
+
+/* Rotated by the frame loop; the fruit next to it stays upright. */
+.fruitArrowTip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  margin: -1.1vh 0 0 -1.5vh;
+  border-left: 1.5vh solid transparent;
+  border-right: 1.5vh solid transparent;
+  border-bottom: 2.2vh solid rgba(255, 255, 255, 0.95);
+  filter: drop-shadow(0 0.15rem 0.25rem rgba(0, 0, 0, 0.4));
 }
 
 .lilypad {

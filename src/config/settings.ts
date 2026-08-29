@@ -73,7 +73,7 @@ export const BOAT_TURN = 2.6; // rad/s added per tap
 export const BOAT_TURN_DRAG = 7; // exponential; ~21 degrees per single tap
 export const BOAT_RADIUS = 0.05;
 export const BOAT_LENGTH = 0.13;
-export const BOAT_MARGIN = 0.095; // keeps pads and fruit clear of the wrap seam
+export const BOAT_MARGIN = 0.095; // keeps pads and fruit clear of the shoreline
 /** The Kenney sprite's pointed bow is at the bottom, so it needs turning around. */
 export const BOAT_SPRITE_OFFSET_DEG = 180;
 
@@ -108,6 +108,40 @@ export const PAD_BUMP_BACK = 0.08; // brief reverse on a head-on hit
 export const PAD_KEEP = 0.8; // speed retained on a glancing one
 export const PAD_DEFLECT = 0.55; // radians of turn-away, scaled by how head-on it is
 export const PAD_RELEASE = 1.2; // hysteresis before the same pad can bump again
+
+/**
+ * The water is a fixed WORLD_SCREENS x WORLD_SCREENS world rather than a screen
+ * that wraps. The camera holds still until the boat comes within CAM_MARGIN of
+ * a view edge — a quarter of the view on that axis — then follows it, and stops
+ * at the shoreline, so the beaches are the only place the boat can be pushed
+ * right up against the edge.
+ */
+export const WORLD_SCREENS = 5;
+export const CAM_MARGIN = 0.25; // fraction of the view, per axis
+/** The camera eases toward the deadzone rather than being pinned to it: a tap
+ * steps the boat's speed instantly, and a hard-clamped camera passes that step
+ * straight on to the whole view. Per second; catches up in ~0.4s. */
+export const CAM_LERP = 7;
+export const SHORE = 0.45; // sand band around the world, in screen heights
+export const SHORE_BUMP = 0.1; // reverse speed given by running aground
+
+export const ISLAND_COUNT = 7;
+export const ISLAND_MIN_R = 0.16;
+export const ISLAND_MAX_R = 0.3;
+
+export const WHALE_COUNT = 4;
+export const WHALE_R = 0.2;
+export const WHALE_SPEED = 0.04; // screen heights per second
+export const WHALE_TURN = 0.25; // radians per second of idle wander
+
+/** Fruit is placed near the boat: 25 screens of empty water is not a game. */
+export const FRUIT_NEAR = 1.7;
+export const FRUIT_FAR = 0.55; // ...but never right under the bow
+export const ARROW_INSET_PX = 52; // how far the off-screen fruit arrow sits from the edge
+
+/** Only pads within this much of the view are in the DOM, recut every CULL_STEP. */
+export const CULL_MARGIN = 0.7;
+export const CULL_STEP = 0.3;
 
 // Note Muncher layout, in fractions of the arena.
 export const STAFF_BASE = 0.17; // middle C, measured from the bottom
