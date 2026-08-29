@@ -18,8 +18,10 @@ if [ -n "$NETLIFY_SITE_ID" ] && [ "$NETLIFY_SITE_ID" != "$SITE_ID" ]; then
     exit 1
 fi
 
-# Optional: NETLIFY_AUTH_TOKEN — personal access token. If unset, the
-# CLI uses the credentials from `netlify login`.
+# NETLIFY_AUTH_TOKEN — personal access token, declared in
+# build-workspace.yaml so bashbuild prompts for it (hidden) at startup and
+# exports it here. Skipping the prompt leaves it unset rather than empty, so
+# the CLI falls back to the credentials from `netlify login`.
 
 DIST_DIR=source/netlify-deployment/dist
 if [ ! -f "$DIST_DIR/index.html" ]; then

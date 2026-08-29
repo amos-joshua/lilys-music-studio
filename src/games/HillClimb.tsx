@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { audio } from "../audio/AudioEngine";
 import { HILL_PATH, HILL_TOP, hillAngle, hillPoint } from "../game/hill";
-import { ANIMALS, ICONS, TREAT_SETS } from "../config/theme";
+import { ICONS, rollAnimal, rollTreat } from "../config/theme";
+import type { Sprite } from "../config/theme";
 import { Slider } from "../components/Slider";
 import {
   HILL_BOUNCE,
@@ -39,14 +40,14 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
   const [rounds, setRounds] = useState(0);
   const [bursts, setBursts] = useState<Burst[]>([]);
 
-  const animal = useMemo(
-    () => ANIMALS.find((a) => a.id === settings.animalId) ?? ANIMALS[0],
-    [settings.animalId]
-  );
-  const prize = useMemo(() => {
-    const set = TREAT_SETS.find((t) => t.id === settings.treatSetId) ?? TREAT_SETS[0];
-    return set.items.find((i) => i.id === "icecream") ?? set.items[0];
-  }, [settings.treatSetId]);
+  // A new climber and a new prize every round, so the fiftieth climb of the
+  // afternoon still has something to look at. Rolled from state rather than
+  // derived, so a re-render never swaps the animal out mid-climb.
+  const [cast, setCast] = useState<{ animal: Sprite; prize: Sprite }>(() => ({
+    animal: rollAnimal(settings.animalId),
+    prize: rollTreat(settings.treatSetId),
+  }));
+  const { animal, prize } = cast;
 
   const arenaRef = useRef<HTMLDivElement>(null);
   const animalRef = useRef<HTMLDivElement>(null);
@@ -65,6 +66,14 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
 
   settingsRef.current = settings;
   phaseRef.current = phase;
+
+  const recast = useCallback(() => {
+    const s = settingsRef.current;
+    setCast((prev) => ({
+      animal: rollAnimal(s.animalId, prev.animal),
+      prize: rollTreat(s.treatSetId, prev.prize),
+    }));
+  }, []);
 
   const measure = useCallback(() => {
     const el = arenaRef.current;
@@ -95,8 +104,9 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
     lastFrame.current = 0;
     setRounds(0);
     setBursts([]);
+    recast();
     setPhase("playing");
-  }, []);
+  }, [recast]);
 
   const onHit = useCallback(
     (hit: NoteHit) => {
@@ -172,6 +182,8 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
           vel.current = 0;
           squash.current = 1;
           audio.boing(audio.now + 0.005, 0.5);
+          // Back at the bottom: the next climber and the next prize step in.
+          recast();
           setPhase("playing");
         }
       }
@@ -209,7 +221,7 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [phase, addBurst]);
+  }, [phase, addBurst, recast]);
 
   return (
     <div className="game">

@@ -3,11 +3,20 @@ import elephant from "../assets/openmoji/elephant.svg";
 import fox from "../assets/openmoji/fox.svg";
 import frog from "../assets/openmoji/frog.svg";
 import penguin from "../assets/openmoji/penguin.svg";
+import cow from "../assets/openmoji/cow.svg";
+import fish from "../assets/openmoji/fish.svg";
+import mouse from "../assets/openmoji/mouse.svg";
+import crocodile from "../assets/openmoji/crocodile.svg";
 import apple from "../assets/openmoji/apple.svg";
 import banana from "../assets/openmoji/banana.svg";
 import strawberry from "../assets/openmoji/strawberry.svg";
 import grapes from "../assets/openmoji/grapes.svg";
 import watermelon from "../assets/openmoji/watermelon.svg";
+import pear from "../assets/openmoji/pear.svg";
+import orange from "../assets/openmoji/orange.svg";
+import cherries from "../assets/openmoji/cherries.svg";
+import pineapple from "../assets/openmoji/pineapple.svg";
+import peach from "../assets/openmoji/peach.svg";
 import icecream from "../assets/openmoji/icecream.svg";
 import cookie from "../assets/openmoji/cookie.svg";
 import doughnut from "../assets/openmoji/doughnut.svg";
@@ -19,6 +28,7 @@ import trophy from "../assets/openmoji/trophy.svg";
 import boatSrc from "../assets/boat/boat.png";
 import isoBoatSrc from "../assets/boat/iso-boat.png";
 import lilypadSrc from "../assets/boat/lilypad.svg";
+import { pickOther, shuffled } from "../game/random";
 
 // Piano key sticker colours (matches the stickers on Lily's piano).
 export const NOTE_COLORS: Record<string, string> = {
@@ -43,6 +53,10 @@ export const ANIMALS: Sprite[] = [
   { id: "frog", name: "Frog", url: frog },
   { id: "penguin", name: "Penguin", url: penguin },
   { id: "elephant", name: "Elephant", url: elephant },
+  { id: "cow", name: "Cow", url: cow },
+  { id: "fish", name: "Fish", url: fish },
+  { id: "mouse", name: "Mouse", url: mouse },
+  { id: "crocodile", name: "Crocodile", url: crocodile },
 ];
 
 export const TREAT_SETS: { id: string; name: string; items: Sprite[] }[] = [
@@ -55,6 +69,11 @@ export const TREAT_SETS: { id: string; name: string; items: Sprite[] }[] = [
       { id: "strawberry", name: "Strawberry", url: strawberry },
       { id: "grapes", name: "Grapes", url: grapes },
       { id: "watermelon", name: "Watermelon", url: watermelon },
+      { id: "pear", name: "Pear", url: pear },
+      { id: "orange", name: "Orange", url: orange },
+      { id: "cherries", name: "Cherries", url: cherries },
+      { id: "pineapple", name: "Pineapple", url: pineapple },
+      { id: "peach", name: "Peach", url: peach },
     ],
   },
   {
@@ -76,3 +95,44 @@ export const BOAT = { boat: boatSrc, lilypad: lilypadSrc };
 
 /** Every edible sprite, for modes that just want variety. */
 export const ALL_TREATS: Sprite[] = TREAT_SETS.flatMap((s) => s.items);
+
+/**
+ * The pool a setting names: the one sprite it pins, or everything when it names
+ * no single sprite — which is how SURPRISE, and any stale stored id, resolve.
+ */
+export function animalPool(animalId: string): Sprite[] {
+  const chosen = ANIMALS.find((a) => a.id === animalId);
+  return chosen ? [chosen] : ANIMALS;
+}
+
+export function treatPool(treatSetId: string): Sprite[] {
+  const set = TREAT_SETS.find((t) => t.id === treatSetId);
+  return set ? set.items : ALL_TREATS;
+}
+
+/** A fresh animal for the next round, avoiding the one just seen. */
+export function rollAnimal(animalId: string, previous?: Sprite): Sprite {
+  return pickOther(animalPool(animalId), previous);
+}
+
+export function rollTreat(treatSetId: string, previous?: Sprite): Sprite {
+  return pickOther(treatPool(treatSetId), previous);
+}
+
+/**
+ * A run's worth of treats: the pool shuffled, then reshuffled as often as the
+ * run needs. Every fruit is seen once before any is seen twice, and a reshuffle
+ * that would put the same fruit either side of the seam is rolled again.
+ */
+export function rollTreatRun(treatSetId: string, count: number): Sprite[] {
+  const pool = treatPool(treatSetId);
+  const out: Sprite[] = [];
+  while (out.length < count) {
+    let block = shuffled(pool);
+    for (let tries = 0; tries < 4 && pool.length > 1 && block[0] === out[out.length - 1]; tries++) {
+      block = shuffled(pool);
+    }
+    out.push(...block);
+  }
+  return out.slice(0, count);
+}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { audio } from "../audio/AudioEngine";
-import { ALL_TREATS, BOAT, ICONS } from "../config/theme";
+import { BOAT, ICONS, rollTreat } from "../config/theme";
+import type { Sprite } from "../config/theme";
 import { Slider } from "../components/Slider";
 import {
   BOAT_DRAG,
@@ -64,7 +65,11 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
   const [phase, setPhase] = useState<"ready" | "playing">("ready");
   const [score, setScore] = useState(0);
   const [pads, setPads] = useState<Pad[]>([]);
-  const [fruit, setFruit] = useState({ x: 1, y: 0.5, url: ALL_TREATS[0].url });
+  const [fruit, setFruit] = useState<{ x: number; y: number; sprite: Sprite }>(() => ({
+    x: 1,
+    y: 0.5,
+    sprite: rollTreat(settings.treatSetId),
+  }));
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const [sparks, setSparks] = useState<Ripple[]>([]);
   const [sides, setSides] = useState<{ note: number; side: Side }[]>([]);
@@ -108,17 +113,19 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
     audio.muted = !settings.sound;
   }, [settings.sound]);
 
-  /** Somewhere clear of the boat, the pads and the edges. */
+  /** Somewhere clear of the boat, the pads and the edges, and never the same
+   * fruit twice running — the reward for a long paddle should look new. */
   const placeFruit = useCallback(
     (asp: number, padList: Pad[], avoid: { x: number; y: number }) => {
+      const sprite = rollTreat(settingsRef.current.treatSetId, fruitRef.current.sprite);
       for (let tries = 0; tries < 60; tries++) {
         const x = rand(BOAT_MARGIN + 0.1, asp - BOAT_MARGIN - 0.1);
         const y = rand(BOAT_MARGIN + 0.1, 1 - BOAT_MARGIN - 0.1);
         if (Math.hypot(x - avoid.x, y - avoid.y) < 0.45) continue;
         if (padList.some((p) => Math.hypot(x - p.x, y - p.y) < p.r + FRUIT_RADIUS + 0.04)) continue;
-        return { x, y, url: ALL_TREATS[Math.floor(Math.random() * ALL_TREATS.length)].url };
+        return { x, y, sprite };
       }
-      return { x: asp / 2, y: 0.2, url: ALL_TREATS[0].url };
+      return { x: asp / 2, y: 0.2, sprite };
     },
     []
   );
@@ -356,7 +363,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
 
         <img
           className="boatFruit"
-          src={fruit.url}
+          src={fruit.sprite.url}
           alt=""
           style={{ left: px(fruit.x), top: px(fruit.y), width: px(FRUIT_RADIUS * 2), height: px(FRUIT_RADIUS * 2) }}
         />

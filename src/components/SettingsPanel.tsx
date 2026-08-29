@@ -3,6 +3,7 @@ import {
   DEFAULT_SETTINGS,
   HILL_BRAKE_MAX,
   HILL_BRAKE_MIN,
+  SURPRISE,
   hillPaceWord,
   tempoWord,
 } from "../config/settings";
@@ -138,6 +139,7 @@ export function SettingsPanel({ settings, onChange, onClose }: Props) {
       <label className="field">
         <span>Animal</span>
         <select value={settings.animalId} onChange={(e) => onChange({ animalId: e.target.value })}>
+          <option value={SURPRISE}>Surprise me</option>
           {ANIMALS.map((a) => (
             <option key={a.id} value={a.id}>
               {a.name}
@@ -148,6 +150,7 @@ export function SettingsPanel({ settings, onChange, onClose }: Props) {
       <label className="field">
         <span>Treats</span>
         <select value={settings.treatSetId} onChange={(e) => onChange({ treatSetId: e.target.value })}>
+          <option value={SURPRISE}>Surprise me</option>
           {TREAT_SETS.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
@@ -155,6 +158,7 @@ export function SettingsPanel({ settings, onChange, onClose }: Props) {
           ))}
         </select>
       </label>
+      <p className="hint">Surprise me draws a new one each round, from a different sprite every time.</p>
 
       <h3>Input</h3>
       <Toggle

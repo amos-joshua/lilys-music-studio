@@ -18,7 +18,7 @@ const MODES = [
   {
     id: "drum" as const,
     name: "Drum Jump",
-    blurb: "Keep the beat and the lion leaps for the fruit.",
+    blurb: "Keep the beat and the animal leaps for the fruit.",
     icon: ICONS.drum,
     ready: true,
   },
@@ -39,7 +39,7 @@ const MODES = [
   {
     id: "staff" as const,
     name: "Note Muncher",
-    blurb: "Coloured bars drift along a staff. Play them and the lion eats them.",
+    blurb: "Coloured bars drift along a staff. Play them and the animal eats them.",
     icon: ICONS.piano,
     ready: true,
   },
@@ -47,7 +47,7 @@ const MODES = [
 
 export default function App() {
   // Key is versioned: bump it when a default changes that a stored value would mask.
-  const [settings, setSettings] = useStoredState<Settings>("lms-settings-v2", DEFAULT_SETTINGS);
+  const [settings, setSettings] = useStoredState<Settings>("lms-settings-v3", DEFAULT_SETTINGS);
   // ?mode=boat opens straight into a mode — handy for bookmarking on the iPad.
   const [mode, setMode] = useState<Mode>(() => {
     const m = new URLSearchParams(window.location.search).get("mode");

@@ -1,3 +1,10 @@
+/**
+ * "Surprise me": held in `animalId` / `treatSetId` alongside the real sprite
+ * ids, so a mode reads one field either way and a deliberate pick ("always the
+ * lion") still wins.
+ */
+export const SURPRISE = "surprise";
+
 export interface Settings {
   bpm: number;
   hitWindowMs: number;
@@ -12,6 +19,7 @@ export interface Settings {
   heyBeat: boolean;
   latencyOffsetMs: number;
   autoCalibrate: boolean;
+  /** A sprite id, or SURPRISE to roll a fresh one every round. */
   animalId: string;
   treatSetId: string;
   acceptAnyNote: boolean;
@@ -39,7 +47,7 @@ export const DEFAULT_SETTINGS: Settings = {
   heyBeat: true,
   latencyOffsetMs: 0,
   autoCalibrate: true,
-  animalId: "lion",
+  animalId: SURPRISE,
   treatSetId: "fruit",
   acceptAnyNote: true,
   drumChannelOnly: false,

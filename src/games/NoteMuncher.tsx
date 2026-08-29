@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { audio } from "../audio/AudioEngine";
-import { ANIMALS, ICONS, NOTE_COLORS } from "../config/theme";
+import { ICONS, NOTE_COLORS, rollAnimal } from "../config/theme";
 import { FREE_PLAY, MELODIES, melodyById, phraseEnds } from "../config/melodies";
 import type { Step } from "../config/melodies";
 import {
@@ -79,10 +79,9 @@ export function NoteMuncher({ settings, onSettingsChange, subscribe, onExit }: P
   const isFree = settings.melodyId === FREE_PLAY;
   const steps: Step[] = useMemo(() => melody?.steps ?? [], [melody]);
   const ends = useMemo(() => (melody ? phraseEnds(melody) : new Set<number>()), [melody]);
-  const animal = useMemo(
-    () => ANIMALS.find((a) => a.id === settings.animalId) ?? ANIMALS[0],
-    [settings.animalId]
-  );
+  // A different diner after each finished tune; held in state so a re-render
+  // cannot swap it out mid-melody.
+  const [animal, setAnimal] = useState(() => rollAnimal(settings.animalId));
 
   const measure = useCallback(() => {
     const el = arenaRef.current;
@@ -186,6 +185,9 @@ export function NoteMuncher({ settings, onSettingsChange, subscribe, onExit }: P
     setIndex(e.i + 1);
     if (e.i + 1 >= steps.length) {
       setPhase("done");
+      // The next diner takes its place behind the finished overlay, so the
+      // setup screen always names the animal that will actually turn up.
+      setAnimal((prev) => rollAnimal(settingsRef.current.animalId, prev));
       setTimeout(() => audio.fanfare(), STAFF_SLIDE_MS);
     }
   }, [ends, steps.length]);
@@ -380,7 +382,7 @@ export function NoteMuncher({ settings, onSettingsChange, subscribe, onExit }: P
 
         {phase === "ready" && (
           <div className="overlay setup">
-            <h2>Play the colours to feed the lion</h2>
+            <h2>Play the colours to feed the {animal.name.toLowerCase()}</h2>
             <div className="tunes">
               {MELODIES.map((m) => (
                 <button

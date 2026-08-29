@@ -35,7 +35,19 @@ uv run --project ../../bashbuild bashbuild .
   **pinned** in `run.sh` (`SITE_ID=95a0cd35-e5b8-481f-9374-fc4854b73c85`) and
   passed via `--site` on every deploy, so it can never go to another site; a
   mismatching `NETLIFY_SITE_ID` is rejected. Change that one line if the site
-  is ever recreated. Optional env: `NETLIFY_AUTH_TOKEN` (else `netlify login`).
+  is ever recreated.
+
+## Secrets
+
+`NETLIFY_AUTH_TOKEN` is declared in the manifest, so bashbuild prompts for it
+(hidden) before the TUI starts and exports it for the deploy script.
+
+Pressing Enter skips it, which leaves the variable **unset** rather than empty —
+so the CLI falls back to the credentials from `netlify login`, which is how the
+sibling website workspaces have always worked. Note that skipping any declared
+secret makes bashbuild ask `Continue anyway? [y/N]` once at startup. If you
+always deploy from a machine with `netlify login`, deleting the `secrets:` block
+removes both the prompt and that confirmation.
 
 ## Order
 

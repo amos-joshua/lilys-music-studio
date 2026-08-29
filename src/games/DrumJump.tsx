@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { audio } from "../audio/AudioEngine";
 import { BeatGrid } from "../game/BeatGrid";
-import { ANIMALS, ICONS, TREAT_SETS } from "../config/theme";
+import { ICONS, rollAnimal, rollTreatRun } from "../config/theme";
 import { Slider } from "../components/Slider";
 import {
   CALIBRATE_MIN_SAMPLES,
@@ -64,14 +64,9 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
   const [hud, setHud] = useState({ caught: 0, streak: 0, best: 0 });
   const [preview, setPreview] = useState(false);
 
-  const animal = useMemo(
-    () => ANIMALS.find((a) => a.id === settings.animalId) ?? ANIMALS[0],
-    [settings.animalId]
-  );
-  const treatSet = useMemo(
-    () => TREAT_SETS.find((t) => t.id === settings.treatSetId) ?? TREAT_SETS[0],
-    [settings.treatSetId]
-  );
+  // A different jumper after each finished run, and a freshly shuffled line of
+  // treats for every run.
+  const [animal, setAnimal] = useState(() => rollAnimal(settings.animalId));
 
   const arenaRef = useRef<HTMLDivElement>(null);
   const animalRef = useRef<HTMLDivElement>(null);
@@ -145,10 +140,11 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
     const s = settingsRef.current;
     const anchor = ctx.currentTime + 0.7;
     grid.current = new BeatGrid(anchor, overrideBpm ?? s.bpm);
+    const run = rollTreatRun(s.treatSetId, s.treatCount);
     const items = Array.from({ length: s.treatCount }, (_, i) => ({
       id: i,
       beat: s.countInBeats + i,
-      url: treatSet.items[i % treatSet.items.length].url,
+      url: run[i].url,
       state: "pending" as const,
       perfect: false,
       hey: false,
@@ -168,7 +164,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
     setBursts([]);
     setHud({ caught: 0, streak: 0, best: 0 });
     setPhase("countin");
-  }, [treatSet]);
+  }, []);
 
   const addBurst = useCallback((x: number, y: number, perfect: boolean) => {
     const id = burstId.current++;
@@ -382,6 +378,8 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
 
       if (phaseRef.current === "playing" && treatsRef.current.length === 0) {
         setPhase("done");
+        // The next jumper takes over behind the finished overlay.
+        setAnimal((prev) => rollAnimal(settingsRef.current.animalId, prev));
         audio.fanfare();
       }
     };

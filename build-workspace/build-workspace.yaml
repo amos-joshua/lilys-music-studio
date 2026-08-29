@@ -2,3 +2,10 @@ name: lilys-music-studio
 build:
   studio-latest: []
   netlify-deployment: [studio-latest]
+
+# Prompted (hidden) before the TUI starts; injected into the environment so
+# the deploy script inherits it. Press Enter to skip and fall back to the
+# credentials from `netlify login`.
+secrets:
+  - env: NETLIFY_AUTH_TOKEN
+    prompt: Netlify personal access token (Enter to use `netlify login`)
