@@ -26,7 +26,10 @@ import {
   FRUIT_NEAR,
   FRUIT_RADIUS,
   ISLAND_COUNT,
+  ISLAND_DECOR_R,
+  ISLAND_HOUSE_CHANCE,
   ISLAND_MAX_R,
+  ISLAND_MAX_TREES,
   ISLAND_MIN_R,
   PAD_BUMP_BACK,
   PAD_DEFLECT,
@@ -57,8 +60,16 @@ interface Pad {
   spin: number;
 }
 
+interface Decor {
+  url: string;
+  x: number; // offset from the island centre, as a fraction of its radius
+  y: number;
+  size: number; // as a fraction of the island radius
+}
+
 interface Island extends Pad {
   tone: number;
+  decor: Decor[];
 }
 
 interface Whale {
@@ -83,6 +94,23 @@ interface Props {
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+const pick = <T,>(items: readonly T[]) => items[Math.floor(Math.random() * items.length)];
+
+/** A house on most islands and up to a couple of trees, spread around the
+ * grassy middle and drawn back to front so the near ones overlap. */
+const decorate = (): Decor[] => {
+  const out: Decor[] = [];
+  if (Math.random() < ISLAND_HOUSE_CHANCE) {
+    out.push({ url: pick(BOAT.houses), x: 0, y: 0, size: 0.62 });
+  }
+  const trees = Math.floor(rand(0, ISLAND_MAX_TREES + 1));
+  for (let i = 0; i < trees; i++) {
+    const a = rand(0, Math.PI * 2);
+    const d = rand(0.45, 1) * ISLAND_DECOR_R;
+    out.push({ url: pick(BOAT.trees), x: Math.cos(a) * d, y: Math.sin(a) * d, size: rand(0.5, 0.66) });
+  }
+  return out.sort((a, b) => a.y - b.y);
+};
 
 export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Props) {
   const [phase, setPhase] = useState<"ready" | "playing">("ready");
@@ -207,7 +235,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
         const y = rand(sea.y0 + r + 0.2, sea.y1 - r - 0.2);
         if (Math.hypot(x - mid.x, y - mid.y) < r + 0.6) continue;
         if (isles.some((p) => Math.hypot(x - p.x, y - p.y) < p.r + r + 0.5)) continue;
-        isles.push({ x, y, r, spin: rand(0, 360), tone: rand(0, 1) });
+        isles.push({ x, y, r, spin: rand(0, 360), tone: rand(0, 1), decor: decorate() });
         break;
       }
     }
@@ -550,7 +578,25 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
                 transform: `translate(-50%, -50%) rotate(${p.spin}deg)`,
                 filter: `hue-rotate(${(p.tone - 0.5) * 40}deg)`,
               }}
-            />
+            >
+              {/* The blob is rotated for variety; what stands on it is not. */}
+              {p.decor.map((d, j) => (
+                <img
+                  key={j}
+                  className="islandDecor"
+                  src={d.url}
+                  alt=""
+                  style={{
+                    left: px(p.r * (1 + d.x)),
+                    top: px(p.r * (1 + d.y)),
+                    width: px(p.r * d.size),
+                    transform: `translate(-50%, -72%) rotate(${-p.spin}deg)`,
+                    // Undo the island's tint: the sand shifts hue, the trees do not.
+                    filter: `hue-rotate(${(0.5 - p.tone) * 40}deg) drop-shadow(0 0.15rem 0.25rem rgba(0, 0, 0, 0.3))`,
+                  }}
+                />
+              ))}
+            </div>
           ))}
 
           {whales.map((wl, i) => (

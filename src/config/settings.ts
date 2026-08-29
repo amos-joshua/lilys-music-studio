@@ -55,7 +55,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hillBrake: 0.36,
   melodyId: "up-down",
   staffAnyOctave: true,
-  boatPads: 5,
+  boatPads: 3,
 };
 
 /**
@@ -126,8 +126,11 @@ export const SHORE = 0.45; // sand band around the world, in screen heights
 export const SHORE_BUMP = 0.1; // reverse speed given by running aground
 
 export const ISLAND_COUNT = 7;
-export const ISLAND_MIN_R = 0.16;
-export const ISLAND_MAX_R = 0.3;
+export const ISLAND_MIN_R = 0.13;
+export const ISLAND_MAX_R = 0.24;
+export const ISLAND_DECOR_R = 0.34; // decor stays this far inside the island, as a fraction of it
+export const ISLAND_HOUSE_CHANCE = 0.6;
+export const ISLAND_MAX_TREES = 2;
 
 export const WHALE_COUNT = 4;
 export const WHALE_R = 0.2;
