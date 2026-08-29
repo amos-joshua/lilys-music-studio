@@ -53,10 +53,12 @@ interface Props {
   onSettingsChange: (patch: Partial<Settings>) => void;
   subscribe: (fn: (hit: NoteHit) => void) => () => void;
   injectHit: (velocity?: number) => void;
+  /** Set only in mixed mode: called instead of waiting on the finish screen. */
+  onFinish?: () => void;
   onExit: () => void;
 }
 
-export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onExit }: Props) {
+export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onFinish, onExit }: Props) {
   const [phase, setPhase] = useState<Phase>("ready");
   const [treats, setTreats] = useState<Treat[]>([]);
   const [bursts, setBursts] = useState<Burst[]>([]);
@@ -77,6 +79,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
   const grid = useRef<BeatGrid | null>(null);
   const treatsRef = useRef<Treat[]>([]);
   const phaseRef = useRef<Phase>("ready");
+  const onFinishRef = useRef<(() => void) | undefined>(undefined);
   const jumpStart = useRef<number | null>(null);
   const jumpScale = useRef(1);
   const scheduledBeat = useRef(-1);
@@ -95,6 +98,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
   settingsRef.current = settings;
   treatsRef.current = treats;
   phaseRef.current = phase;
+  onFinishRef.current = onFinish;
 
   useEffect(() => {
     offsetMs.current = settings.latencyOffsetMs;
@@ -194,6 +198,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
       if (!hit.on) return; // strikes only
       if (!s.acceptAnyNote && s.drumChannelOnly && hit.channel !== 9) return;
 
+      if (phaseRef.current === "done" && onFinishRef.current) return; // handing over
       if (phaseRef.current === "ready" || phaseRef.current === "done") {
         start();
         return;
@@ -388,6 +393,13 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
     return () => cancelAnimationFrame(raf);
   }, [phase, addBurst, addStars]);
 
+  // Mixed mode: hold the trophy long enough to be seen, then hand over.
+  useEffect(() => {
+    if (phase !== "done" || !onFinish) return;
+    const id = setTimeout(onFinish, 2600);
+    return () => clearTimeout(id);
+  }, [phase, onFinish]);
+
   const total = settings.treatCount;
 
   return (
@@ -470,6 +482,12 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onE
               />
               <button className={"ghost" + (preview ? " on" : "")} onClick={() => setPreview((p) => !p)}>
                 {preview ? "◼ Stop" : "▶ Hear it"}
+              </button>
+              <button
+                className={"ghost" + (settings.mixedMode ? " on" : "")}
+                onClick={() => onSettingsChange({ mixedMode: !settings.mixedMode })}
+              >
+                Mixed mode
               </button>
             </div>
 

@@ -5,6 +5,8 @@ import type { Sprite } from "../config/theme";
 import { Slider } from "../components/Slider";
 import {
   ARROW_INSET_PX,
+  BOAT_GOAL_MAX,
+  BOAT_GOAL_MIN,
   BOAT_DRAG,
   BOAT_LENGTH,
   BOAT_MARGIN,
@@ -116,6 +118,8 @@ interface Props {
   settings: Settings;
   onSettingsChange: (patch: Partial<Settings>) => void;
   subscribe: (fn: (hit: NoteHit) => void) => () => void;
+  /** Set only in mixed mode: called instead of waiting on the finish screen. */
+  onFinish?: () => void;
   onExit: () => void;
 }
 
@@ -139,8 +143,10 @@ const decorate = (): Decor[] => {
   return out.sort((a, b) => a.y - b.y);
 };
 
-export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Props) {
-  const [phase, setPhase] = useState<"ready" | "playing">("ready");
+type Phase = "ready" | "playing" | "done";
+
+export function BoatTrip({ settings, onSettingsChange, subscribe, onFinish, onExit }: Props) {
+  const [phase, setPhase] = useState<Phase>("ready");
   const [score, setScore] = useState(0);
   const [pads, setPads] = useState<Pad[]>([]);
   const [shownPads, setShownPads] = useState<Pad[]>([]);
@@ -173,7 +179,9 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
   const speed = useRef(0);
   const omega = useRef(0);
   const lastFrame = useRef(0);
-  const phaseRef = useRef<"ready" | "playing">("ready");
+  const phaseRef = useRef<Phase>("ready");
+  const scoreRef = useRef(0);
+  const onFinishRef = useRef<(() => void) | undefined>(undefined);
   const padsRef = useRef<Pad[]>([]);
   const islandsRef = useRef<Island[]>([]);
   const whalesRef = useRef<Whale[]>([]);
@@ -189,6 +197,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
 
   settingsRef.current = settings;
   phaseRef.current = phase;
+  onFinishRef.current = onFinish;
   padsRef.current = pads;
   islandsRef.current = islands;
   whalesRef.current = whales;
@@ -319,6 +328,7 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
     setIslands(isles);
     setWhales(pod);
     setFruit(placeFruit(made, isles, pod, mid));
+    scoreRef.current = 0;
     setScore(0);
     setPhase("playing");
   }, [asp, worldW, worldH, sea.x0, sea.y0, sea.x1, sea.y1, placeFruit]);
@@ -367,7 +377,8 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
       if (!hit.on) return;
       if (!s.acceptAnyNote && s.drumChannelOnly && hit.channel !== 9) return;
 
-      if (phaseRef.current === "ready") {
+      if (phaseRef.current !== "playing") {
+        if (phaseRef.current === "done" && onFinishRef.current) return; // handing over
         start();
         return;
       }
@@ -528,7 +539,13 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
       if (Math.hypot(pos.current.x - f.x, pos.current.y - f.y) < FRUIT_CATCH) {
         audio.chomp(audio.now + 0.005, true);
         addSpark(f.x, f.y);
-        setScore((n) => n + 1);
+        scoreRef.current += 1;
+        setScore(scoreRef.current);
+        if (scoreRef.current >= settingsRef.current.boatFruitGoal) {
+          audio.fanfare();
+          setPhase("done");
+          return;
+        }
         setFruit(placeFruit(padsRef.current, isles, pod, pos.current));
       }
 
@@ -601,6 +618,13 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
   }, [phase, size, sea.x0, sea.y0, sea.x1, sea.y1, asp, follow, placeFruit, spawnSchool, addRipple, addSpark]);
+
+  // Mixed mode: hold the trophy long enough to be seen, then hand over.
+  useEffect(() => {
+    if (phase !== "done" || !onFinish) return;
+    const id = setTimeout(onFinish, 2200);
+    return () => clearTimeout(id);
+  }, [phase, onFinish]);
 
   const px = (v: number) => v * size.h;
   // Before a run the boat sits mid-water; the world aspect is only known once measured.
@@ -789,6 +813,25 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
           </span>
         </div>
 
+        {phase === "done" && (
+          <div className="overlay" onPointerDown={(e) => e.stopPropagation()}>
+            <img className="trophy" src={ICONS.trophy} alt="" />
+            <h2>{score} aboard!</h2>
+            {onFinish ? (
+              <p className="hint">Next game coming up…</p>
+            ) : (
+              <div className="row">
+                <button className="big" onClick={start}>
+                  Again
+                </button>
+                <button className="big alt2" onClick={onExit}>
+                  ← Modes
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {phase === "ready" && (
           <div className="overlay setup">
             <h2>Paddle left and right to reach the fruit</h2>
@@ -801,6 +844,23 @@ export function BoatTrip({ settings, onSettingsChange, subscribe, onExit }: Prop
                 max={8}
                 onChange={(v) => onSettingsChange({ boatPads: v })}
               />
+            </div>
+
+            <div className="setupBox">
+              <Slider
+                big
+                label="Fruit to finish"
+                value={settings.boatFruitGoal}
+                min={BOAT_GOAL_MIN}
+                max={BOAT_GOAL_MAX}
+                onChange={(v) => onSettingsChange({ boatFruitGoal: v })}
+              />
+              <button
+                className={"ghost" + (settings.mixedMode ? " on" : "")}
+                onClick={() => onSettingsChange({ mixedMode: !settings.mixedMode })}
+              >
+                Mixed mode
+              </button>
             </div>
             <button className="big" onClick={start}>
               Start

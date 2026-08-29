@@ -32,10 +32,12 @@ interface Props {
   onSettingsChange: (patch: Partial<Settings>) => void;
   subscribe: (fn: (hit: NoteHit) => void) => () => void;
   injectHit: (velocity?: number) => void;
+  /** Set only in mixed mode: called after one climb instead of resetting. */
+  onFinish?: () => void;
   onExit: () => void;
 }
 
-export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, onExit }: Props) {
+export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, onFinish, onExit }: Props) {
   const [phase, setPhase] = useState<Phase>("ready");
   const [rounds, setRounds] = useState(0);
   const [bursts, setBursts] = useState<Burst[]>([]);
@@ -60,12 +62,15 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
   const lastFrame = useRef(0);
   const squash = useRef(0);
   const phaseRef = useRef<Phase>("ready");
+  const onFinishRef = useRef<(() => void) | undefined>(undefined);
+  const handedOver = useRef(false);
   const winAt = useRef(0);
   const burstId = useRef(0);
   const settingsRef = useRef(settings);
 
   settingsRef.current = settings;
   phaseRef.current = phase;
+  onFinishRef.current = onFinish;
 
   const recast = useCallback(() => {
     const s = settingsRef.current;
@@ -102,6 +107,7 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
     pos.current = 0;
     vel.current = 0;
     lastFrame.current = 0;
+    handedOver.current = false;
     setRounds(0);
     setBursts([]);
     recast();
@@ -174,7 +180,13 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
           addBurst(HILL_TOP.x * w, (1 - HILL_TOP.y) * h);
         }
       } else if (phaseRef.current === "win") {
-        if (t - winAt.current > 1900) setPhase("reset");
+        // One climb is a turn: in mixed mode the next game follows the cheer.
+        if (t - winAt.current > 1900 && !handedOver.current) {
+          if (onFinishRef.current) {
+            handedOver.current = true; // the mode swap takes a frame or two
+            onFinishRef.current();
+          } else setPhase("reset");
+        }
       } else if (phaseRef.current === "reset") {
         // Run back down for the next one, rather than teleporting.
         pos.current = Math.max(0, pos.current - 2.2 * dt);
@@ -283,6 +295,12 @@ export function HillClimb({ settings, onSettingsChange, subscribe, injectHit, on
                 valueLabel={hillPaceWord(settings.hillBrake)}
                 onChange={(v) => onSettingsChange({ hillBrake: v / 100 })}
               />
+              <button
+                className={"ghost" + (settings.mixedMode ? " on" : "")}
+                onClick={() => onSettingsChange({ mixedMode: !settings.mixedMode })}
+              >
+                Mixed mode
+              </button>
             </div>
 
             <button className="big" onClick={start}>

@@ -30,8 +30,14 @@ export interface Settings {
   /** Note Muncher: which tune, and whether the octave has to match. */
   melodyId: string;
   staffAnyOctave: boolean;
-  /** Boat Trip: how many lily pads clutter the water. */
+  /** Boat Trip: how many lily pads clutter the water, and when a trip ends. */
   boatPads: number;
+  boatFruitGoal: number;
+  /**
+   * Play the three drum modes in turn: whichever one is opened first, then the
+   * next in MIX_CYCLE each time a round finishes.
+   */
+  mixedMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -56,6 +62,8 @@ export const DEFAULT_SETTINGS: Settings = {
   melodyId: "up-down",
   staffAnyOctave: true,
   boatPads: 3,
+  boatFruitGoal: 4,
+  mixedMode: false,
 };
 
 /**
@@ -116,6 +124,9 @@ export const PAD_RELEASE = 1.2; // hysteresis before the same pad can bump again
  * at the shoreline, so the beaches are the only place the boat can be pushed
  * right up against the edge.
  */
+export const BOAT_GOAL_MIN = 1;
+export const BOAT_GOAL_MAX = 10;
+
 export const WORLD_SCREENS = 5;
 export const CAM_MARGIN = 0.25; // fraction of the view, per axis
 /** The camera eases toward the deadzone rather than being pinned to it: a tap

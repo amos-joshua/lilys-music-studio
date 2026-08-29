@@ -14,6 +14,9 @@ import "./App.css";
 
 type Mode = "home" | "drum" | "hill" | "staff" | "boat";
 
+/** Mixed mode plays these in turn, starting from whichever was opened. */
+const MIX_CYCLE: Mode[] = ["boat", "drum", "hill"];
+
 const MODES = [
   {
     id: "drum" as const,
@@ -55,6 +58,11 @@ export default function App() {
   });
   const [sheet, setSheet] = useState<"none" | "settings" | "monitor">("none");
   const { log, sources, lastHit, subscribe, injectHit, clearLog } = useMidi(settings.bridgeWsUrl);
+
+  const advance = useCallback((from: Mode) => {
+    const i = MIX_CYCLE.indexOf(from);
+    setMode(MIX_CYCLE[(i + 1) % MIX_CYCLE.length]);
+  }, []);
 
   const patch = useCallback(
     (p: Partial<Settings>) => setSettings((prev) => ({ ...prev, ...p })),
@@ -116,6 +124,7 @@ export default function App() {
             onSettingsChange={patch}
             subscribe={subscribe}
             injectHit={injectHit}
+            onFinish={settings.mixedMode ? () => advance("drum") : undefined}
             onExit={() => setMode("home")}
           />
         )}
@@ -125,6 +134,7 @@ export default function App() {
             settings={settings}
             onSettingsChange={patch}
             subscribe={subscribe}
+            onFinish={settings.mixedMode ? () => advance("boat") : undefined}
             onExit={() => setMode("home")}
           />
         )}
@@ -144,6 +154,7 @@ export default function App() {
             onSettingsChange={patch}
             subscribe={subscribe}
             injectHit={injectHit}
+            onFinish={settings.mixedMode ? () => advance("hill") : undefined}
             onExit={() => setMode("home")}
           />
         )}
