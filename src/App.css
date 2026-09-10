@@ -1080,3 +1080,174 @@ button.big.alt2 {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ---- piano bug ---- */
+.bugArena {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #2a2f4a 0%, #3b4168 60%, #4a5183 100%);
+}
+
+/* A front view tipped back a little: enough to see the tops of the keys and the
+   lip along the front, without the sideways skew of a true isometric. */
+.keyboard {
+  width: min(96%, 78rem);
+  height: min(46vh, 26rem);
+  perspective: 90rem;
+  perspective-origin: 50% 20%;
+}
+
+.keys {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform: rotateX(26deg);
+  transform-style: preserve-3d;
+}
+
+.pianoKey {
+  position: absolute;
+  top: 0;
+  transform-origin: top center;
+  transition: transform 90ms ease-out, filter 120ms ease;
+  transform-style: preserve-3d;
+}
+
+.pianoKey.white {
+  height: 100%;
+  border-radius: 0 0 0.7rem 0.7rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f2ee 78%, #e2ded4 100%);
+  border: 1px solid #cfcabd;
+  box-shadow: inset -0.35rem 0 0.5rem rgba(0, 0, 0, 0.08);
+}
+
+.pianoKey.black {
+  height: 62%;
+  border-radius: 0 0 0.5rem 0.5rem;
+  background: linear-gradient(180deg, #3a3f52 0%, #22263a 70%, #171a2a 100%);
+  transform: translateZ(2.4rem);
+  z-index: 2;
+}
+
+/* The front lip: a face standing up from the front edge of the key. */
+.pianoKey::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2.4rem;
+  transform-origin: bottom center;
+  transform: rotateX(-90deg);
+  border-radius: 0 0 0.5rem 0.5rem;
+  background: linear-gradient(180deg, #e8e4da, #c9c3b4);
+}
+
+.pianoKey.black::after {
+  background: linear-gradient(180deg, #262a3d, #12141f);
+}
+
+.pianoKey.down {
+  transform: rotateX(4deg);
+}
+
+.pianoKey.black.down {
+  transform: translateZ(2.4rem) rotateX(4deg);
+}
+
+.pianoKey.lit {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--lit) 55%, white) 0%, var(--lit) 100%);
+  box-shadow: 0 0 1.6rem color-mix(in srgb, var(--lit) 70%, transparent);
+}
+
+.pianoKey.wrong {
+  animation: keyWrong 0.3s ease-in-out;
+  filter: saturate(0.6) brightness(0.85);
+}
+
+@keyframes keyWrong {
+  0%,
+  100% {
+    filter: none;
+  }
+  50% {
+    filter: brightness(0.7);
+  }
+}
+
+/* The bug stands on the near end of its key. */
+.bugSpot {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  width: 0;
+  height: 0;
+  display: grid;
+  place-items: center;
+}
+
+.bugGlow {
+  position: absolute;
+  width: 5.2rem;
+  height: 5.2rem;
+  border-radius: 50%;
+  filter: blur(0.9rem);
+  opacity: 0.75;
+}
+
+.bug {
+  position: absolute;
+  width: 3.4rem;
+  height: 3.4rem;
+  transform-origin: 50% 100%;
+  animation: bugDance 0.9s ease-in-out infinite;
+  filter: drop-shadow(0 0.25rem 0.3rem rgba(0, 0, 0, 0.35));
+}
+
+@keyframes bugDance {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) rotate(-9deg) translateY(0);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(9deg) translateY(-0.5rem);
+  }
+}
+
+.bug.squished {
+  animation: bugSquish 0.42s ease-out forwards;
+}
+
+@keyframes bugSquish {
+  0% {
+    transform: translate(-50%, -50%) scale(1, 1);
+  }
+  35% {
+    transform: translate(-50%, -40%) scale(1.5, 0.25);
+  }
+  100% {
+    transform: translate(-50%, -40%) scale(1.9, 0.15);
+    opacity: 0;
+  }
+}
+
+.bugSpot.squished .bugGlow {
+  animation: glowPop 0.42s ease-out forwards;
+}
+
+@keyframes glowPop {
+  from {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  to {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
+.rangeLabel {
+  font-weight: 700;
+  white-space: nowrap;
+  padding-bottom: 0.55rem;
+}

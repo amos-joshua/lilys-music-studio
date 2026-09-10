@@ -33,6 +33,7 @@ import evergreenTree from "../assets/openmoji/evergreen-tree.svg";
 import house from "../assets/openmoji/house.svg";
 import hut from "../assets/openmoji/hut.svg";
 import tropicalFish from "../assets/openmoji/tropical-fish.svg";
+import ladybug from "../assets/openmoji/ladybug.svg";
 import { pickOther, shuffled } from "../game/random";
 
 // Piano key sticker colours (matches the stickers on Lily's piano).
@@ -94,7 +95,7 @@ export const TREAT_SETS: { id: string; name: string; items: Sprite[] }[] = [
 
 // The three-quarter boat is only ever shown still, on the mode picker card —
 // it cannot be used in play, where the hull rotates through every angle.
-export const ICONS = { sparkles, star, drum, piano, trophy, icecream, boat: isoBoatSrc };
+export const ICONS = { sparkles, star, drum, piano, trophy, icecream, boat: isoBoatSrc, bug: ladybug };
 
 export const BOAT = {
   boat: boatSrc,

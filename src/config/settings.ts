@@ -27,7 +27,10 @@ export interface Settings {
   bridgeWsUrl: string;
   /** Hill Climb: how fast upward motion dies away. Sets the drumming rate demanded. */
   hillBrake: number;
-  /** Note Muncher: which tune, and whether the octave has to match. */
+  /** Piano Bug: which slice of the keyboard is drawn. */
+  pianoLowMidi: number;
+  pianoOctaves: number;
+  /** Note Muncher and Piano Bug: which tune, and whether the octave has to match. */
   melodyId: string;
   staffAnyOctave: boolean;
   /** Boat Trip: how many lily pads clutter the water, and when a trip ends. */
@@ -62,6 +65,8 @@ export const DEFAULT_SETTINGS: Settings = {
   drumChannelOnly: false,
   bridgeWsUrl: "",
   hillBrake: 0.36,
+  pianoLowMidi: 48, // C3
+  pianoOctaves: 2,
   melodyId: "up-down",
   staffAnyOctave: true,
   boatPads: 3,
@@ -128,6 +133,18 @@ export const PAD_RELEASE = 1.2; // hysteresis before the same pad can bump again
  * at the shoreline, so the beaches are the only place the boat can be pushed
  * right up against the edge.
  */
+/**
+ * Piano Bug. The keyboard is drawn from pianoLowMidi upward, always starting on
+ * a C so the octaves line up with the sticker colours, and a bug waits on the
+ * next note of the tune until that exact key is pressed.
+ */
+export const PIANO_LOW_MIN = 36; // C2
+export const PIANO_LOW_MAX = 72; // C5
+export const PIANO_OCT_MIN = 1;
+export const PIANO_OCT_MAX = 3;
+export const BUG_SQUISH_MS = 420; // the splat, before the next bug appears
+export const BUG_WRONG_MS = 320;
+
 export const MIXED_TREATS_MIN = 3;
 export const MIXED_TREATS_MAX = 16;
 

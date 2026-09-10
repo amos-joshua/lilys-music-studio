@@ -3,6 +3,7 @@ import { DrumJump } from "./games/DrumJump";
 import { HillClimb } from "./games/HillClimb";
 import { NoteMuncher } from "./games/NoteMuncher";
 import { BoatTrip } from "./games/BoatTrip";
+import { PianoBug } from "./games/PianoBug";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { MidiMonitor } from "./components/MidiMonitor";
 import { useMidi } from "./midi/useMidi";
@@ -12,7 +13,7 @@ import type { Settings } from "./config/settings";
 import { ICONS } from "./config/theme";
 import "./App.css";
 
-type Mode = "home" | "drum" | "hill" | "staff" | "boat";
+type Mode = "home" | "drum" | "hill" | "staff" | "boat" | "pianobug";
 
 /** Mixed mode plays these in turn, starting from whichever was opened. */
 const MIX_CYCLE: Mode[] = ["boat", "drum", "hill"];
@@ -37,6 +38,13 @@ const MODES = [
     name: "Boat Trip",
     blurb: "Paddle left and right to steer the boat to the fruit.",
     icon: ICONS.boat,
+    ready: true,
+  },
+  {
+    id: "pianobug" as const,
+    name: "Piano Bug",
+    blurb: "A bug dances on the next key. Play it and squash it.",
+    icon: ICONS.bug,
     ready: true,
   },
   {
@@ -135,6 +143,15 @@ export default function App() {
             onSettingsChange={patch}
             subscribe={subscribe}
             onFinish={settings.mixedMode ? () => advance("boat") : undefined}
+            onExit={() => setMode("home")}
+          />
+        )}
+
+        {mode === "pianobug" && (
+          <PianoBug
+            settings={settings}
+            onSettingsChange={patch}
+            subscribe={subscribe}
             onExit={() => setMode("home")}
           />
         )}
