@@ -14,6 +14,7 @@ import {
   STAFF_PLAY_X,
   STAFF_REPEAT_GUARD_MS,
   STAFF_SLIDE_MS,
+  STAFF_SPARK_MS,
   STAFF_STEP,
   barOpacity,
 } from "../config/settings";
@@ -257,7 +258,7 @@ export function NoteMuncher({ settings, onSettingsChange, subscribe, onExit }: P
     const spark = () =>
       addSpark(x + (Math.random() - 0.5) * 0.07 * size.w, y + (Math.random() - 0.5) * barH);
     spark();
-    const id = setInterval(spark, 130);
+    const id = setInterval(spark, STAFF_SPARK_MS);
     return () => clearInterval(id);
   }, [eating, steps, yFor, size.w, barH, addSpark]);
 
