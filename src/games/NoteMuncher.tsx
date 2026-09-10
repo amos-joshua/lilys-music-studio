@@ -8,6 +8,7 @@ import {
   STAFF_BAR_GAP,
   STAFF_BASE,
   STAFF_BEAT_W,
+  STAFF_CHEW_MS,
   STAFF_EAT_MS,
   STAFF_MAX_HOLD_MS,
   STAFF_PLAY_X,
@@ -331,13 +332,18 @@ export function NoteMuncher({ settings, onSettingsChange, subscribe, onExit }: P
                   }
                   style={{
                     left: layout.xs[i],
-                    width: layout.widths[i],
+                    // Eating slides the bar's left end into the mouth, then draws
+                    // the rest in after it: the width goes to nothing while the
+                    // left edge stays put, so the bar disappears behind the animal.
+                    width: isEating ? 0 : layout.widths[i],
                     height: barH,
                     top: yFor(staffStep(midiFromName(s.note))) - barH / 2,
                     background: NOTE_COLORS[letterOf(midiFromName(s.note))],
                     opacity: isEating ? 1 : barOpacity(ahead),
                     transform: isEating ? `translate3d(${STAFF_ANIMAL_X * size.w - playX}px, 0, 0)` : undefined,
-                    transition: `opacity 320ms ease, transform ${STAFF_EAT_MS}ms ease-out`,
+                    transition:
+                      `opacity 320ms ease, transform ${STAFF_EAT_MS}ms ease-out, ` +
+                      `width ${STAFF_CHEW_MS}ms cubic-bezier(0.4, 0, 0.7, 1) ${STAFF_EAT_MS}ms`,
                   }}
                 />
               );

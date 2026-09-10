@@ -192,6 +192,10 @@ export const STAFF_BAR_GAP = 0.055; // roomy, so only a few bars are on screen a
 export const STAFF_SLIDE_MS = 300;
 export const STAFF_REPEAT_GUARD_MS = 100;
 export const STAFF_EAT_MS = 260;
+/** How long the mouthful takes once the bar has reached the animal: it is
+ * drawn in from its right end, left edge pinned at the mouth, rather than
+ * sitting there pulsing until the key is released. */
+export const STAFF_CHEW_MS = 900;
 /** Safety net for controllers that never send note-off. */
 export const STAFF_MAX_HOLD_MS = 2500;
 
