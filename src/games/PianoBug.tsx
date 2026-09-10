@@ -147,7 +147,7 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
       setScore((n) => n + 1);
       audio.chomp(audio.now + 0.02, true);
       const id = starId.current++;
-      setStars((prev) => [...prev, { id, left: spot.left + spot.width / 2, top: spot.sharp ? 0.46 : 0.79 }]);
+      setStars((prev) => [...prev, { id, left: spot.left + spot.width / 2, top: spot.sharp ? 0.4 : 0.73 }]);
       setTimeout(() => setStars((prev) => prev.filter((s) => s.id !== id)), BUG_STAR_MS);
 
       if (settingsRef.current.melodyId === FREE_PLAY) {

@@ -1284,7 +1284,8 @@ button.big.alt2 {
   }
 }
 
-/* Left behind on the key the bug just leapt from. */
+/* Left behind on the key the bug just leapt from: below the bug's own layer, so
+   a hop that passes over a star is never clipped by it. */
 .keyStar {
   position: absolute;
   width: 0;
@@ -1292,7 +1293,7 @@ button.big.alt2 {
   display: grid;
   place-items: center;
   pointer-events: none;
-  z-index: 4;
+  z-index: 2;
 }
 
 .keyStar img {
