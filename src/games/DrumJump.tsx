@@ -9,6 +9,8 @@ import {
   JUMP_RISE_S,
   JUMP_TOTAL_S,
   MAX_OFFSET_MS,
+  MIXED_TREATS_MAX,
+  MIXED_TREATS_MIN,
   PERFECT_FRACTION,
   tempoWord,
 } from "../config/settings";
@@ -144,8 +146,9 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onF
     const s = settingsRef.current;
     const anchor = ctx.currentTime + 0.7;
     grid.current = new BeatGrid(anchor, overrideBpm ?? s.bpm);
-    const run = rollTreatRun(s.treatSetId, s.treatCount);
-    const items = Array.from({ length: s.treatCount }, (_, i) => ({
+    const count = onFinishRef.current ? s.mixedTreatCount : s.treatCount;
+    const run = rollTreatRun(s.treatSetId, count);
+    const items = Array.from({ length: count }, (_, i) => ({
       id: i,
       beat: s.countInBeats + i,
       url: run[i].url,
@@ -400,7 +403,7 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onF
     return () => clearTimeout(id);
   }, [phase, onFinish]);
 
-  const total = settings.treatCount;
+  const total = onFinish ? settings.mixedTreatCount : settings.treatCount;
 
   return (
     <div className="game">
@@ -490,6 +493,19 @@ export function DrumJump({ settings, onSettingsChange, subscribe, injectHit, onF
                 Mixed mode
               </button>
             </div>
+
+            {onFinish && (
+              <div className="setupBox">
+                <Slider
+                  big
+                  label="Treats this turn"
+                  value={settings.mixedTreatCount}
+                  min={MIXED_TREATS_MIN}
+                  max={MIXED_TREATS_MAX}
+                  onChange={(v) => onSettingsChange({ mixedTreatCount: v })}
+                />
+              </div>
+            )}
 
             <button className="big" onClick={() => start()}>
               Start

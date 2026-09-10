@@ -38,6 +38,9 @@ export interface Settings {
    * next in MIX_CYCLE each time a round finishes.
    */
   mixedMode: boolean;
+  /** Drum Jump's round length while mixed mode is on: a full 24 treats would
+   * dwarf a boat trip and a single climb. */
+  mixedTreatCount: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -64,6 +67,7 @@ export const DEFAULT_SETTINGS: Settings = {
   boatPads: 3,
   boatFruitGoal: 4,
   mixedMode: false,
+  mixedTreatCount: 8,
 };
 
 /**
@@ -124,6 +128,9 @@ export const PAD_RELEASE = 1.2; // hysteresis before the same pad can bump again
  * at the shoreline, so the beaches are the only place the boat can be pushed
  * right up against the edge.
  */
+export const MIXED_TREATS_MIN = 3;
+export const MIXED_TREATS_MAX = 16;
+
 export const BOAT_GOAL_MIN = 1;
 export const BOAT_GOAL_MAX = 10;
 
