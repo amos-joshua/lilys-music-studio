@@ -1293,6 +1293,8 @@ button.big.alt2 {
   display: grid;
   place-items: center;
   pointer-events: none;
+  /* Above a pressed key, still below the bug. */
+  transform: translateZ(1.6rem);
   z-index: 2;
 }
 

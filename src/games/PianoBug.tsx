@@ -268,7 +268,10 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
                 style={{
                   left: `${(bugKey.left + bugKey.width / 2) * 100}%`,
                   top: bugKey.sharp ? "46%" : "79%",
-                  transform: bugKey.sharp ? "translateZ(3rem)" : "translateZ(0.1rem)",
+                  // Clear of the key surface even while it is held down: a
+                  // pressed key tips its front edge toward the viewer, and at
+                  // the bug's end of the key that is well over a centimetre.
+                  transform: bugKey.sharp ? "translateZ(4rem)" : "translateZ(2.4rem)",
                 }}
               >
                 <div className="bugHop" key={target}>
