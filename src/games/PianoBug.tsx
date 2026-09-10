@@ -11,6 +11,8 @@ import {
   PIANO_LOW_MIN,
   PIANO_OCT_MAX,
   PIANO_OCT_MIN,
+  STICKER_HIGH_MIDI,
+  STICKER_LOW_MIDI,
 } from "../config/settings";
 import type { Settings } from "../config/settings";
 import { freqFromMidi, isSharp, letterOf, midiFromName, nameFromMidi } from "../game/staff";
@@ -100,13 +102,18 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
     setFreeTarget(keys[Math.floor(Math.random() * keys.length)].midi);
   }, [keys]);
 
-  /** The key the bug is sitting on, or -1 once the tune is finished. */
+  /** The key the bug is sitting on, or -1 once the tune is finished. Tunes are
+   * played in the stickered octave when it is on screen, so the colours are
+   * always there to go by. */
   const target = useMemo(() => {
     if (isFree) return freeTarget;
     const step = steps[index];
     if (!step?.note) return -1;
-    return fit(midiFromName(step.note), low, high);
+    const home = STICKER_LOW_MIDI >= low && STICKER_LOW_MIDI + 11 <= high ? STICKER_LOW_MIDI : low;
+    return fit(fit(midiFromName(step.note), home, home + 11), low, high);
   }, [isFree, freeTarget, steps, index, low, high]);
+
+  const bugKey = keys.find((k) => k.midi === target);
 
   targetRef.current = target;
 
@@ -221,21 +228,36 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
                     ["--lit" as string]: lit,
                   }}
                 >
-                  {!k.sharp && <span className="sticker" style={{ background: lit }} />}
-                  {isTarget && (
-                    <span className={"bugSpot" + (squishing ? " squished" : "")}>
-                      <span className="bugGlow" style={{ background: lit }} />
-                      <img
-                        className={"bug" + (squishing ? " squished" : "")}
-                        src={ICONS.bug}
-                        alt=""
-                        draggable={false}
-                      />
-                    </span>
+                  {!k.sharp && k.midi >= STICKER_LOW_MIDI && k.midi <= STICKER_HIGH_MIDI && (
+                    <span className="sticker" style={{ background: lit }} />
                   )}
                 </div>
               );
             })}
+
+            {/* One bug for the whole tune: it hops from key to key rather than
+                blinking out and back in. The layer slides, the inner element
+                arcs, and remounting on each target restarts the arc. */}
+            {bugKey && phase === "playing" && (
+              <div
+                className="bugLayer"
+                style={{
+                  left: `${(bugKey.left + bugKey.width / 2) * 100}%`,
+                  top: bugKey.sharp ? "46%" : "79%",
+                  transform: bugKey.sharp ? "translateZ(3rem)" : "translateZ(0.1rem)",
+                }}
+              >
+                <div className={"bugHop" + (squishing ? " squished" : "")} key={target}>
+                  <span className="bugGlow" style={{ background: colorOf(target) }} />
+                  <img
+                    className={"bug" + (squishing ? " squished" : "")}
+                    src={ICONS.bug}
+                    alt=""
+                    draggable={false}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

@@ -142,6 +142,12 @@ export const PIANO_LOW_MIN = 36; // C2
 export const PIANO_LOW_MAX = 72; // C5
 export const PIANO_OCT_MIN = 1;
 export const PIANO_OCT_MAX = 3;
+/** Lily's stickers cover one octave, so only these keys are coloured — and the
+ * tune is folded into that octave, which is where the stickers can help. */
+export const STICKER_LOW_MIDI = 48; // C3
+export const STICKER_HIGH_MIDI = 59; // B3
+
+export const BUG_HOP_MS = 320; // travel to the next key
 export const BUG_SQUISH_MS = 420; // the splat, before the next bug appears
 export const BUG_WRONG_MS = 320;
 
