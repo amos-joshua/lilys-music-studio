@@ -5,7 +5,8 @@ import { FREE_PLAY, MELODIES, melodyById } from "../config/melodies";
 import type { Step } from "../config/melodies";
 import { Slider } from "../components/Slider";
 import {
-  BUG_SQUISH_MS,
+  BUG_GUARD_MS,
+  BUG_STAR_MS,
   BUG_WRONG_MS,
   PIANO_LOW_MAX,
   PIANO_LOW_MIN,
@@ -18,6 +19,12 @@ import { freqFromMidi, isSharp, letterOf, midiFromName, nameFromMidi } from "../
 import type { NoteHit } from "../midi/types";
 
 type Phase = "ready" | "playing" | "done";
+
+interface Star {
+  id: number;
+  left: number;
+  top: number;
+}
 
 interface Key {
   midi: number;
@@ -50,22 +57,23 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [down, setDown] = useState<number[]>([]);
-  const [squishing, setSquishing] = useState(false);
+  const [stars, setStars] = useState<Star[]>([]);
   const [wrong, setWrong] = useState(-1);
   const [freeTarget, setFreeTarget] = useState(-1);
 
   const phaseRef = useRef<Phase>("ready");
   const indexRef = useRef(0);
-  const squishRef = useRef(false);
+  const starId = useRef(0);
+  const lastCatch = useRef(0);
   const settingsRef = useRef(settings);
   const wrongTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Read inside the hit handler, which must not be rebuilt on every bug. */
   const targetRef = useRef(-1);
+  const bugKeyRef = useRef<Key | undefined>(undefined);
 
   settingsRef.current = settings;
   phaseRef.current = phase;
   indexRef.current = index;
-  squishRef.current = squishing;
 
   const melody = useMemo(() => melodyById(settings.melodyId), [settings.melodyId]);
   const isFree = settings.melodyId === FREE_PLAY;
@@ -114,6 +122,7 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
   }, [isFree, freeTarget, steps, index, low, high, stickerLow, stickerHigh]);
 
   const bugKey = keys.find((k) => k.midi === target);
+  bugKeyRef.current = bugKey;
 
   targetRef.current = target;
 
@@ -126,21 +135,21 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
     setScore(0);
     setDown([]);
     setWrong(-1);
-    setSquishing(false);
-    squishRef.current = false;
+    setStars([]);
     if (settingsRef.current.melodyId === FREE_PLAY) rollFree();
     setPhase("playing");
   }, [rollFree]);
 
-  /** Squashed: the splat plays, then the next bug takes its place. */
-  const squish = useCallback(() => {
-    setSquishing(true);
-    squishRef.current = true;
-    setScore((n) => n + 1);
-    audio.chomp(audio.now + 0.02, true);
-    setTimeout(() => {
-      setSquishing(false);
-      squishRef.current = false;
+  /** Right key: a star pops where the bug was and it hops straight on. Nothing
+   * waits on an animation, so a quick run of notes stays smooth. */
+  const caught = useCallback(
+    (spot: Key) => {
+      setScore((n) => n + 1);
+      audio.chomp(audio.now + 0.02, true);
+      const id = starId.current++;
+      setStars((prev) => [...prev, { id, left: spot.left + spot.width / 2, top: spot.sharp ? 0.46 : 0.79 }]);
+      setTimeout(() => setStars((prev) => prev.filter((s) => s.id !== id)), BUG_STAR_MS);
+
       if (settingsRef.current.melodyId === FREE_PLAY) {
         rollFree();
         return;
@@ -153,8 +162,9 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
         setPhase("done");
         audio.fanfare();
       }
-    }, BUG_SQUISH_MS);
-  }, [rollFree, steps]);
+    },
+    [rollFree, steps]
+  );
 
   const onHit = useCallback(
     (hit: NoteHit) => {
@@ -173,10 +183,13 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
       }
       // The pressed key always sounds, right or wrong — it is a piano.
       audio.piano(audio.now + 0.005, freqFromMidi(hit.note), hit.velocity);
-      if (phaseRef.current !== "playing" || squishRef.current) return;
+      if (phaseRef.current !== "playing") return;
 
-      if (hit.note === targetRef.current) {
-        squish();
+      if (hit.note === targetRef.current && bugKeyRef.current) {
+        const now = performance.now();
+        if (now - lastCatch.current < BUG_GUARD_MS) return;
+        lastCatch.current = now;
+        caught(bugKeyRef.current);
       } else {
         audio.buzz(audio.now + 0.03);
         setWrong(hit.note);
@@ -184,7 +197,7 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
         wrongTimer.current = setTimeout(() => setWrong(-1), BUG_WRONG_MS);
       }
     },
-    [start, squish]
+    [start, caught]
   );
 
   useEffect(() => subscribe(onHit), [subscribe, onHit]);
@@ -236,6 +249,16 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
               );
             })}
 
+            {stars.map((s) => (
+              <span
+                key={s.id}
+                className="keyStar"
+                style={{ left: `${s.left * 100}%`, top: `${s.top * 100}%` }}
+              >
+                <img src={ICONS.sparkles} alt="" />
+              </span>
+            ))}
+
             {/* One bug for the whole tune: it hops from key to key rather than
                 blinking out and back in. The layer slides, the inner element
                 arcs, and remounting on each target restarts the arc. */}
@@ -248,14 +271,9 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
                   transform: bugKey.sharp ? "translateZ(3rem)" : "translateZ(0.1rem)",
                 }}
               >
-                <div className={"bugHop" + (squishing ? " squished" : "")} key={target}>
+                <div className="bugHop" key={target}>
                   <span className="bugGlow" style={{ background: colorOf(target) }} />
-                  <img
-                    className={"bug" + (squishing ? " squished" : "")}
-                    src={ICONS.bug}
-                    alt=""
-                    draggable={false}
-                  />
+                  <img className="bug" src={ICONS.bug} alt="" draggable={false} />
                 </div>
               </div>
             )}

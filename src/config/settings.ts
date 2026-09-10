@@ -152,7 +152,8 @@ export const stickerLowMidi = (low: number, octaves: number) =>
   low + Math.round((octaves - 1) / 2) * 12;
 
 export const BUG_HOP_MS = 320; // travel to the next key
-export const BUG_SQUISH_MS = 420; // the splat, before the next bug appears
+export const BUG_STAR_MS = 700; // how long the star left behind lingers
+export const BUG_GUARD_MS = 90; // a controller repeating note-on must not skip two bugs
 export const BUG_WRONG_MS = 320;
 
 export const MIXED_TREATS_MIN = 3;
