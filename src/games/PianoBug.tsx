@@ -221,6 +221,7 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
                     ["--lit" as string]: lit,
                   }}
                 >
+                  {!k.sharp && <span className="sticker" style={{ background: lit }} />}
                   {isTarget && (
                     <span className={"bugSpot" + (squishing ? " squished" : "")}>
                       <span className="bugGlow" style={{ background: lit }} />
