@@ -142,10 +142,14 @@ export const PIANO_LOW_MIN = 36; // C2
 export const PIANO_LOW_MAX = 72; // C5
 export const PIANO_OCT_MIN = 1;
 export const PIANO_OCT_MAX = 3;
-/** Lily's stickers cover one octave, so only these keys are coloured — and the
- * tune is folded into that octave, which is where the stickers can help. */
-export const STICKER_LOW_MIDI = 48; // C3
-export const STICKER_HIGH_MIDI = 59; // B3
+/**
+ * Lily's stickers cover one octave, so only one octave is coloured here — the
+ * middle one of whatever is drawn, which is also where the tune is played. That
+ * keeps the bug within reach however the range is shifted, rather than pinning
+ * it to an absolute octave that may not be the one under her hands.
+ */
+export const stickerLowMidi = (low: number, octaves: number) =>
+  low + Math.round((octaves - 1) / 2) * 12;
 
 export const BUG_HOP_MS = 320; // travel to the next key
 export const BUG_SQUISH_MS = 420; // the splat, before the next bug appears

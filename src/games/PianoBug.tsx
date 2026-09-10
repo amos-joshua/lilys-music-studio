@@ -11,8 +11,7 @@ import {
   PIANO_LOW_MIN,
   PIANO_OCT_MAX,
   PIANO_OCT_MIN,
-  STICKER_HIGH_MIDI,
-  STICKER_LOW_MIDI,
+  stickerLowMidi,
 } from "../config/settings";
 import type { Settings } from "../config/settings";
 import { freqFromMidi, isSharp, letterOf, midiFromName, nameFromMidi } from "../game/staff";
@@ -79,6 +78,8 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
 
   const low = settings.pianoLowMidi;
   const high = low + settings.pianoOctaves * 12;
+  const stickerLow = stickerLowMidi(low, settings.pianoOctaves);
+  const stickerHigh = stickerLow + 11;
 
   /** White keys share the width evenly; black ones straddle the seam behind them. */
   const keys = useMemo(() => {
@@ -109,9 +110,8 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
     if (isFree) return freeTarget;
     const step = steps[index];
     if (!step?.note) return -1;
-    const home = STICKER_LOW_MIDI >= low && STICKER_LOW_MIDI + 11 <= high ? STICKER_LOW_MIDI : low;
-    return fit(fit(midiFromName(step.note), home, home + 11), low, high);
-  }, [isFree, freeTarget, steps, index, low, high]);
+    return fit(fit(midiFromName(step.note), stickerLow, stickerHigh), low, high);
+  }, [isFree, freeTarget, steps, index, low, high, stickerLow, stickerHigh]);
 
   const bugKey = keys.find((k) => k.midi === target);
 
@@ -191,6 +191,7 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
   useEffect(() => () => void (wrongTimer.current && clearTimeout(wrongTimer.current)), []);
 
   const rangeLabel = `${nameFromMidi(low)} – ${nameFromMidi(high)}`;
+  const stickerLabel = `${nameFromMidi(stickerLow)} – ${nameFromMidi(stickerHigh)}`;
 
   return (
     <div className="game">
@@ -228,7 +229,7 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
                     ["--lit" as string]: lit,
                   }}
                 >
-                  {!k.sharp && k.midi >= STICKER_LOW_MIDI && k.midi <= STICKER_HIGH_MIDI && (
+                  {!k.sharp && k.midi >= stickerLow && k.midi <= stickerHigh && (
                     <span className="sticker" style={{ background: lit }} />
                   )}
                 </div>
@@ -312,7 +313,8 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
               Start
             </button>
             <p className="hint">
-              The bug takes the colour of its key. Wrong notes cost nothing — the bug just waits.
+              Stickers and bugs stay on {stickerLabel}, the middle octave. Wrong notes cost nothing
+              — the bug just waits.
             </p>
           </div>
         )}
