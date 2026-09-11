@@ -25,6 +25,8 @@ export interface Settings {
   acceptAnyNote: boolean;
   drumChannelOnly: boolean;
   bridgeWsUrl: string;
+  /** Sing instead of playing: the microphone becomes another note source. */
+  micInput: boolean;
   /** Hill Climb: how fast upward motion dies away. Sets the drumming rate demanded. */
   hillBrake: number;
   /** Piano Bug: which slice of the keyboard is drawn. */
@@ -64,6 +66,7 @@ export const DEFAULT_SETTINGS: Settings = {
   acceptAnyNote: true,
   drumChannelOnly: false,
   bridgeWsUrl: "",
+  micInput: false,
   hillBrake: 0.36,
   pianoLowMidi: 48, // C3
   pianoOctaves: 2,
@@ -133,6 +136,20 @@ export const PAD_RELEASE = 1.2; // hysteresis before the same pad can bump again
  * at the shoreline, so the beaches are the only place the boat can be pushed
  * right up against the edge.
  */
+/**
+ * Microphone input. A sung note is a continuous pitch, so it has to be cut into
+ * discrete notes: one starts after MIC_HOLD_FRAMES on the same semitone and
+ * ends after MIC_RELEASE_FRAMES of quiet, with a deadband at the semitone
+ * boundary so vibrato does not chatter between neighbours.
+ */
+export const MIC_CLARITY = 0.9;
+export const MIC_MIN_HZ = 70;
+export const MIC_MAX_HZ = 1600;
+export const MIC_HOLD_FRAMES = 3;
+export const MIC_RELEASE_FRAMES = 4;
+export const MIC_OCTAVE_FRAMES = 5; // frames before an octave jump is believed
+export const MIC_CENTS_DEADBAND = 25;
+
 /**
  * Piano Bug. The keyboard is drawn from pianoLowMidi upward, always starting on
  * a C so the octaves line up with the sticker colours, and a bug waits on the

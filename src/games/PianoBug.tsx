@@ -15,7 +15,7 @@ import {
   stickerLowMidi,
 } from "../config/settings";
 import type { Settings } from "../config/settings";
-import { freqFromMidi, isSharp, letterOf, midiFromName, nameFromMidi } from "../game/staff";
+import { freqFromMidi, isSharp, letterOf, matches, midiFromName, nameFromMidi } from "../game/staff";
 import type { NoteHit } from "../midi/types";
 
 type Phase = "ready" | "playing" | "done";
@@ -185,7 +185,10 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
       audio.piano(audio.now + 0.005, freqFromMidi(hit.note), hit.velocity);
       if (phaseRef.current !== "playing") return;
 
-      if (hit.note === targetRef.current && bugKeyRef.current) {
+      // A sung note lands in whatever octave the singer's voice has, so the
+      // octave is forgiven for the microphone alone; a key press still has to
+      // be the key the bug is standing on.
+      if (bugKeyRef.current && matches(hit.note, targetRef.current, hit.kind === "mic")) {
         const now = performance.now();
         if (now - lastCatch.current < BUG_GUARD_MS) return;
         lastCatch.current = now;

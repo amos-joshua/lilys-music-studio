@@ -17,8 +17,14 @@ npm run build
 | **Hill Climb** — drum fast to climb; stop and the animal slides back | playable |
 | **Boat Trip** — paddle left and right to steer a boat to the fruit | playable |
 | **Note Muncher** — coloured bars on a treble staff, played to be eaten | playable |
+| **Piano Bug** — a bug waits on the next key of the tune; play it to send it hopping | playable |
 
-Append `?mode=drum|hill|boat|staff` to open straight into a mode.
+Append `?mode=drum|hill|boat|staff|pianobug` to open straight into a mode.
+
+Boat Trip, Drum Jump and Hill Climb share a **mixed mode** toggle on their start screens:
+with it on, finishing a round hands over to the next of the three, starting from whichever
+was opened. Drum Jump uses its own shorter round length (`mixedTreatCount`) while it is on,
+so one turn each is roughly even.
 
 Drum Jump is about precision and runs on the beat grid. Hill Climb is about sustained
 rate and has no rhythm requirement at all — sporadic hits count exactly as much as even
@@ -39,9 +45,14 @@ A drum pad cannot tell us which stick is which, so sides are learned: the first 
 seen becomes right, the next left, alternating, remembered for the session. The `⇄` button in
 the HUD flips every assignment at once, for when the first hit was the wrong hand.
 
-The water **wraps** on both axes, so the boat can never be cornered. Distances to pads and
-fruit use the shortest wrapping delta, so a fruit just across the seam is genuinely near.
-Pads and fruit are placed clear of the edges so nothing is drawn half-off.
+The water is a fixed world of `WORLD_SCREENS²` screens with beaches at its edges. Everything
+is laid out in one world div that the frame loop translates, so the camera is a single
+transform and no entity re-renders as the view moves. The boat is held a quarter of the view
+from each edge and the camera eases toward that deadzone rather than being pinned to it; it
+stops at the shoreline, which is the only place the boat reaches the view edge. Islands and
+whales reuse the lily pad collision as solid obstacles, fruit spawns within a screen or two of
+the boat, and a badge on the view edge points the way when it is off screen. A trip ends at
+`boatFruitGoal` fruit.
 
 Lily pads preserve momentum. On first contact the angle between the boat's heading and the
 line to the pad's centre decides the response — measured:
@@ -123,7 +134,8 @@ during a held note are ignored rather than scolded.
 | `webmidi.ts` | `navigator.requestMIDIAccess`. Works on desktop Chrome, and on iPad if the bridge injects a polyfill. |
 | `bridge.ts` → `BridgeSource` | Catch-all for a native bridge. Listens on `window.postMessage`, a set of global callbacks (`window.onMidiMessage`, `receiveMIDI`, `__midiBridge.onMessage`, …) and custom DOM events. |
 | `bridge.ts` → `WebSocketSource` | Only if a URL is set in Settings. |
-| `keyboard.ts` | Space / F / J. Desktop fallback; screen taps go through the same path. |
+| `keyboard.ts` | Space = pad, A–K = C4–C5. Desktop fallback; screen taps go through the same path. |
+| `mic.ts` | Opt-in in Settings. Sung pitch becomes note-on/note-off, so the piano modes work with no keyboard attached. |
 
 `parseMidiPayload` accepts byte arrays, `Uint8Array`, `ArrayBuffer`, `{data|bytes|midi|message|payload}`
 wrappers, `{status,data1,data2}`, `{type:'noteOn',note,velocity,channel}`, and hex or decimal strings.
@@ -134,6 +146,20 @@ decoded is still shown in the MIDI monitor (top bar → device pill) with its ra
 so the actual shape can be read off the screen and taught to the parser.
 
 By default every note-on from every device and channel counts as a drum hit.
+
+### Singing
+
+`MicSource` is an ordinary `MidiSource`, so no mode knows a hit was sung. The work is turning a
+continuous pitch into discrete notes ([pitchy](https://github.com/ianprime0509/pitchy), McLeod
+pitch method): a note starts once the same semitone has held for `MIC_HOLD_FRAMES`, ends after
+`MIC_RELEASE_FRAMES` of quiet, and holds until the voice is `MIC_CENTS_DEADBAND` cents past the
+halfway point to its neighbour, so vibrato does not chatter between two semitones. A single
+frame an octave off the running pitch is treated as the detector rather than the singer.
+
+Echo cancellation is **on**, because the app plays a piano tone through the same speakers the
+microphone is listening to. Headphones remove the question entirely. Piano Bug forgives the
+octave for microphone hits only (`hit.kind === "mic"`) — a voice sings the tune wherever it
+sits, while a key press still has to be the key the bug is standing on.
 
 ## Timing
 
@@ -160,6 +186,7 @@ src/game/BeatGrid.ts       beat times
 src/games/DrumJump.tsx     the game (React for structure, direct DOM writes per frame)
 src/midi/                  input sources, decoding, useMidi hook
 src/config/theme.ts        sprites + piano sticker colours (shared with singing-bob by copy)
+src/midi/mic.ts            microphone pitch -> notes (method carried over from singing-bob)
 src/config/settings.ts     defaults and engine constants
 ```
 

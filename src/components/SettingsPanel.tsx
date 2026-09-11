@@ -162,6 +162,15 @@ export function SettingsPanel({ settings, onChange, onClose }: Props) {
 
       <h3>Input</h3>
       <Toggle
+        label="Sing into the microphone"
+        value={settings.micInput}
+        onChange={(v) => onChange({ micInput: v })}
+      />
+      <p className="hint">
+        A sung note counts as a played one, so the piano modes work with no keyboard attached. Asks
+        for the microphone the first time. Headphones help — the speakers are in earshot of the mic.
+      </p>
+      <Toggle
         label="Accept any note from any device"
         value={settings.acceptAnyNote}
         onChange={(v) => onChange({ acceptAnyNote: v })}

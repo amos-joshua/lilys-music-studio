@@ -65,7 +65,7 @@ export default function App() {
     return MODES.some((x) => x.id === m && x.ready) ? (m as Mode) : "home";
   });
   const [sheet, setSheet] = useState<"none" | "settings" | "monitor">("none");
-  const { log, sources, lastHit, subscribe, injectHit, clearLog } = useMidi(settings.bridgeWsUrl);
+  const { log, sources, lastHit, subscribe, injectHit, clearLog } = useMidi(settings.bridgeWsUrl, settings.micInput);
 
   const advance = useCallback((from: Mode) => {
     const i = MIX_CYCLE.indexOf(from);

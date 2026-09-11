@@ -1,4 +1,4 @@
-export type SourceKind = "webmidi" | "bridge" | "websocket" | "keyboard";
+export type SourceKind = "webmidi" | "bridge" | "websocket" | "keyboard" | "mic";
 
 export type SourceStatus = "idle" | "connecting" | "ready" | "unsupported" | "error";
 

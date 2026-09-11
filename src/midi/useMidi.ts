@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BridgeSource, WebSocketSource } from "./bridge";
 import { KeyboardSource } from "./keyboard";
+import { MicSource } from "./mic";
 import { WebMidiSource } from "./webmidi";
 import { decodeNote } from "./types";
 import type { MidiSource, NoteHit, RawMessage } from "./types";
@@ -18,7 +19,7 @@ export interface SourceInfo {
   detail: string;
 }
 
-export function useMidi(wsUrl: string) {
+export function useMidi(wsUrl: string, mic: boolean) {
   const [log, setLog] = useState<LogEntry[]>([]);
   const [sources, setSources] = useState<SourceInfo[]>([]);
   const [lastHit, setLastHit] = useState<NoteHit | null>(null);
@@ -37,6 +38,8 @@ export function useMidi(wsUrl: string) {
       new BridgeSource(),
       new KeyboardSource(),
       ...(wsUrl ? [new WebSocketSource(wsUrl)] : []),
+      // Opt-in: starting it asks for the microphone.
+      ...(mic ? [new MicSource()] : []),
     ];
     instances.current = list;
 
@@ -56,7 +59,7 @@ export function useMidi(wsUrl: string) {
       clearInterval(poll);
       list.forEach((s) => s.stop());
     };
-  }, [wsUrl, emitHit]);
+  }, [wsUrl, mic, emitHit]);
 
   const subscribe = useCallback((fn: (hit: NoteHit) => void) => {
     listeners.current.add(fn);
