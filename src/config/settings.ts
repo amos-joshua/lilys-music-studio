@@ -149,6 +149,15 @@ export const MIC_HOLD_FRAMES = 3;
 export const MIC_RELEASE_FRAMES = 4;
 export const MIC_OCTAVE_FRAMES = 5; // frames before an octave jump is believed
 export const MIC_CENTS_DEADBAND = 25;
+/**
+ * How long the microphone stays deaf around a sound the app makes. The tail
+ * covers the room and the detector's 2048-sample window, which still holds the
+ * sound after it has stopped. The cap matters more: a piano note is scheduled
+ * for 1.1s but has decayed to nothing long before that, and gating the whole
+ * ring would leave no gap to sing the next note into.
+ */
+export const SOUND_TAIL_MS = 90;
+export const SOUND_GATE_MAX_MS = 300;
 
 /**
  * Piano Bug. The keyboard is drawn from pianoLowMidi upward, always starting on

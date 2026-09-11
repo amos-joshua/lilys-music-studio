@@ -157,7 +157,14 @@ halfway point to its neighbour, so vibrato does not chatter between two semitone
 frame an octave off the running pitch is treated as the detector rather than the singer.
 
 Echo cancellation is **on**, because the app plays a piano tone through the same speakers the
-microphone is listening to. Headphones remove the question entirely. Piano Bug forgives the
+microphone is listening to, and on top of that the microphone is **gated** while the app is
+sounding: `AudioEngine` records a window per scheduled sound and `MicSource` skips those frames
+entirely — skipping rather than reporting silence, so a note held through one of the app's own
+sounds is not cut short by it. Two details matter. Sounds are often scheduled well ahead (the
+metronome most of all), so a window is a span to be *inside*, not a deadline to be before; and
+the gated span is capped at `SOUND_GATE_MAX_MS`, because a piano note is scheduled for 1.1s but
+decays to nothing long before that and gating the whole ring would leave no gap to sing the next
+note into. Headphones remove the question entirely. Piano Bug forgives the
 octave for microphone hits only (`hit.kind === "mic"`) — a voice sings the tune wherever it
 sits, while a key press still has to be the key the bug is standing on.
 

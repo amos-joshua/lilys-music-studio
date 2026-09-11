@@ -1,4 +1,5 @@
 import { PitchDetector } from "pitchy";
+import { audio } from "../audio/AudioEngine";
 import type { MidiSource, RawMessage, SourceStatus } from "./types";
 import {
   MIC_CENTS_DEADBAND,
@@ -77,6 +78,10 @@ export class MicSource implements MidiSource {
 
     const frame = () => {
       this.raf = requestAnimationFrame(frame);
+      // Deaf while the app is sounding, rather than hearing its own piano back.
+      // Skipping the frame outright — not reporting silence — means a note being
+      // held through one of the app's own sounds is not cut short by it.
+      if (audio.sounding) return;
       analyser.getFloatTimeDomainData(buffer);
       const [hz, clarity] = detector.findPitch(buffer, sampleRate);
       const heard = clarity > MIC_CLARITY && hz > MIC_MIN_HZ && hz < MIC_MAX_HZ;

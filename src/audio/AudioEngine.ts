@@ -1,4 +1,5 @@
 import heyUrl from "../assets/audio/hey.mp3";
+import { SOUND_GATE_MAX_MS, SOUND_TAIL_MS } from "../config/settings";
 
 /**
  * Owns the AudioContext and the mapping between `performance.now()` (when MIDI
@@ -13,6 +14,10 @@ export class AudioEngine {
   private heyBuffer: AudioBuffer | null = null;
   private heyLoading = false;
   muted = false;
+  /** Windows when the speakers are busy, on the performance clock. Sounds are
+   * often scheduled well ahead — the metronome most of all — so this is a list
+   * of spans to be inside, not a single deadline to be before. */
+  private soundWindows: { from: number; to: number }[] = [];
 
   /** Must be called from a user gesture. */
   resume(): AudioContext {
@@ -86,10 +91,35 @@ export class AudioEngine {
     return (ctxTime - this.offset) * 1000;
   }
 
+  /**
+   * True while the app's own sound is expected to be audible. The microphone
+   * source skips these frames: it listens to the same room the speakers play
+   * into, and every piano tone the app sounds would otherwise come back as a
+   * sung note. The tail covers the room and the detector's own 2048-sample
+   * window, which still holds the sound after it has stopped.
+   */
+  get sounding(): boolean {
+    const now = performance.now();
+    return this.soundWindows.some((w) => now >= w.from && now <= w.to);
+  }
+
+  /** Record that sound is scheduled from audio time `at` for `dur` seconds. */
+  private willSound(at: number, dur: number) {
+    const ctx = this.ctx;
+    if (!ctx || this.muted) return;
+    const start = Math.max(at, ctx.currentTime);
+    const now = performance.now();
+    const from = this.ctxToPerf(start);
+    const gate = Math.min(dur * 1000, SOUND_GATE_MAX_MS) + SOUND_TAIL_MS;
+    this.soundWindows.push({ from, to: from + gate });
+    if (this.soundWindows.length > 24) this.soundWindows = this.soundWindows.filter((w) => w.to > now);
+  }
+
   private tone(at: number, freq: number, dur: number, gain: number, type: OscillatorType = "sine", endFreq?: number) {
     const ctx = this.ctx;
     if (!ctx || !this.master || this.muted) return;
     const t = Math.max(at, ctx.currentTime);
+    this.willSound(t, dur);
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
     osc.type = type;
@@ -108,6 +138,7 @@ export class AudioEngine {
     const ctx = this.ctx;
     if (!ctx || !this.master || this.muted) return;
     const t = Math.max(at, ctx.currentTime);
+    this.willSound(t, dur);
     const frames = Math.ceil(ctx.sampleRate * dur);
     const buf = ctx.createBuffer(1, frames, ctx.sampleRate);
     const chan = buf.getChannelData(0);
@@ -154,6 +185,7 @@ export class AudioEngine {
     }
     const src = ctx.createBufferSource();
     src.buffer = this.heyBuffer;
+    this.willSound(at, this.heyBuffer.duration);
     const g = ctx.createGain();
     g.gain.value = 1;
     src.connect(g);
