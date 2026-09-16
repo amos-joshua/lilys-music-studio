@@ -158,6 +158,12 @@ gradual speed-up 900->500          best streak:  19
 steady then one long pause         best streak:   8
 ```
 
+`bugHopMs` is the time in the air, and also the tempo ceiling — taps are ignored mid-hop, so a
+lazier hop makes frantic drumming physically impossible as well as unrewarding, and gives a small
+child something to pace herself against. One slider drives the crossing and the arc together
+through a `--hop` custom property. Every fourth hop shouts "hey!" (when `heyBeat` is on), which
+groups the beat into bars out loud and gives her three hops to aim at the next one.
+
 Rewards start at `HOP_REWARD_AT` and grow through `HOP_REWARD_TIERS` — more of them, and from a
 wider pool, the longer the beat holds. A round ends on the clock (`bugHopMinutes`, 1–6) or early
 on a long steady run (`HOP_TARGET_STREAK`), whichever comes first.

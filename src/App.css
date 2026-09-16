@@ -1385,7 +1385,7 @@ button.big.alt2 {
   width: 0;
   height: 0;
   z-index: 3;
-  transition: left 260ms cubic-bezier(0.35, 0, 0.25, 1);
+  transition: left var(--hop, 340ms) cubic-bezier(0.35, 0, 0.25, 1);
 }
 
 .hopArc {
@@ -1395,7 +1395,7 @@ button.big.alt2 {
 }
 
 .hopArc.flying {
-  animation: hopArc 260ms cubic-bezier(0.3, 0, 0.4, 1);
+  animation: hopArc var(--hop, 340ms) cubic-bezier(0.3, 0, 0.4, 1);
 }
 
 @keyframes hopArc {

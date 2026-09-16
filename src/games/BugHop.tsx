@@ -7,12 +7,14 @@ import { Groove } from "../game/groove";
 import {
   HOP_MAX_MINUTES,
   HOP_MIN_MINUTES,
-  HOP_MS,
+  HOP_MS_MAX,
+  HOP_MS_MIN,
   HOP_REWARD_AT,
   HOP_REWARD_MS,
   HOP_REWARD_TIERS,
   HOP_TARGET_STREAK,
   HOP_WOBBLE_MS,
+  hopPaceWord,
 } from "../config/settings";
 import type { Settings } from "../config/settings";
 import type { NoteHit } from "../midi/types";
@@ -62,6 +64,7 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
   const sideMap = useRef(new Map<number, Side>());
   const nextSide = useRef<Side>(1);
   const rewardId = useRef(0);
+  const hopCount = useRef(0);
   const endsAt = useRef(0);
   const settingsRef = useRef(settings);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -97,6 +100,7 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
     audio.resume();
     audio.muted = !settingsRef.current.sound;
     groove.current.reset();
+    hopCount.current = 0;
     setSide(1);
     setFlying(false);
     setWobble(0);
@@ -155,13 +159,17 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
       setBest(groove.current.best);
       // Pitch rises with the streak, so a steady run is audibly going somewhere.
       audio.blip(audio.now + 0.005, Math.min(1, tap.streak / HOP_TARGET_STREAK), 100);
+      // Every fourth hop shouts, which groups the beat into bars out loud and
+      // gives her something to aim the next three at.
+      hopCount.current += 1;
+      if (settingsRef.current.heyBeat && hopCount.current % 4 === 0) audio.hey(audio.now + 0.02);
 
       later(() => {
         setFlying(false);
         flyingRef.current = false;
         if (tap.streak >= HOP_REWARD_AT) celebrate((from * -1) as Side, tap.streak);
         if (groove.current.best >= HOP_TARGET_STREAK) finish("streak");
-      }, HOP_MS);
+      }, settingsRef.current.bugHopMs);
     },
     [later, celebrate, finish]
   );
@@ -247,6 +255,8 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
 
       <div
         className="arena pondArena"
+        // Drives the crossing and the arc together, so one slider moves both.
+        style={{ ["--hop" as string]: `${settings.bugHopMs}ms` }}
         onPointerDown={(e) => {
           // Each half of the screen stands in for one stick, so the mode is
           // playable — and testable — with no drum at all.
@@ -309,6 +319,19 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
                 max={HOP_MAX_MINUTES}
                 suffix=" min"
                 onChange={(v) => onSettingsChange({ bugHopMinutes: v })}
+              />
+            </div>
+
+            <div className="setupBox">
+              <Slider
+                big
+                label="Hop speed"
+                value={HOP_MS_MIN + HOP_MS_MAX - settings.bugHopMs}
+                min={HOP_MS_MIN}
+                max={HOP_MS_MAX}
+                step={20}
+                valueLabel={hopPaceWord(settings.bugHopMs)}
+                onChange={(v) => onSettingsChange({ bugHopMs: HOP_MS_MIN + HOP_MS_MAX - v })}
               />
             </div>
             <button className="big" onClick={start}>

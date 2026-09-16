@@ -25,8 +25,9 @@ export interface Settings {
   acceptAnyNote: boolean;
   drumChannelOnly: boolean;
   bridgeWsUrl: string;
-  /** Bug Hop: how long a round lasts, in minutes. */
+  /** Bug Hop: how long a round lasts, and how long the bug is in the air. */
   bugHopMinutes: number;
+  bugHopMs: number;
   /** Sing instead of playing: the microphone becomes another note source. */
   micInput: boolean;
   /** Hill Climb: how fast upward motion dies away. Sets the drumming rate demanded. */
@@ -69,6 +70,7 @@ export const DEFAULT_SETTINGS: Settings = {
   drumChannelOnly: false,
   bridgeWsUrl: "",
   bugHopMinutes: 3,
+  bugHopMs: 340,
   micInput: false,
   hillBrake: 0.36,
   pianoLowMidi: 48, // C3
@@ -196,7 +198,13 @@ export const GROOVE_LERP = 0.3; // how fast the running tempo follows the player
  * demands a tempo — the reward for a steady one is the whole game, which is why
  * the thresholds below matter more than any of the physics.
  */
-export const HOP_MS = 260; // time in the air
+/**
+ * Time in the air. Also the tempo ceiling, since taps are ignored mid-hop: a
+ * lazier hop makes frantic drumming physically impossible as well as
+ * unrewarding, and gives a small child something to pace herself against.
+ */
+export const HOP_MS_MIN = 180;
+export const HOP_MS_MAX = 700;
 export const HOP_MIN_MINUTES = 1;
 export const HOP_MAX_MINUTES = 6;
 export const HOP_TARGET_STREAK = 20; // a long steady run ends the round early
@@ -341,6 +349,14 @@ export function hillPaceWord(brake: number): string {
   if (rate <= 2.8) return "brisk drumming";
   if (rate <= 3.4) return "fast drumming";
   return "very fast";
+}
+
+export function hopPaceWord(ms: number): string {
+  if (ms <= 240) return "zippy";
+  if (ms <= 320) return "brisk";
+  if (ms <= 440) return "easy";
+  if (ms <= 560) return "slow";
+  return "dreamy";
 }
 
 export function tempoWord(bpm: number): string {
