@@ -63,10 +63,17 @@ main {
   flex: 1;
   display: flex;
   align-items: center;
+  /* Wrapped lines default to `stretch`, which pushes the last row to the bottom
+     of a tall picker; `align-items` only centres within a line, not the lines.
+     `safe` so that a picker too short for its rows scrolls from the top rather
+     than centring the overflow and clipping the first row out of reach. */
+  align-content: center;
+  align-content: safe center;
   justify-content: center;
   gap: 1.5rem;
   flex-wrap: wrap;
   padding: 2rem;
+  overflow-y: auto;
 }
 
 .card {
