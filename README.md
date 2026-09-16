@@ -18,8 +18,9 @@ npm run build
 | **Boat Trip** — paddle left and right to steer a boat to the fruit | playable |
 | **Note Muncher** — coloured bars on a treble staff, played to be eaten | playable |
 | **Piano Bug** — a bug waits on the next key of the tune; play it to send it hopping | playable |
+| **Bug Hop** — a bug crosses between two lily pads; hit the stick it is sitting on | playable |
 
-Append `?mode=drum|hill|boat|staff|pianobug` to open straight into a mode.
+Append `?mode=drum|hill|boat|staff|pianobug|bughop` to open straight into a mode.
 
 Boat Trip, Drum Jump and Hill Climb share a **mixed mode** toggle on their start screens:
 with it on, finishing a round hands over to the next of the three, starting from whichever
@@ -124,6 +125,42 @@ at 38%, and everything beyond that fades to barely visible (`barOpacity`).
 Any octave counts by default. Wrong notes sound the pressed pitch, move the animal to the
 wrong height — visibly, which is the lesson — shake it, and cost nothing. Stray presses
 during a held note are ignored rather than scolded.
+
+### Bug Hop
+
+Drum Jump is a **reaction** game: the app picks the moment and the child must hit it, which needs
+read-ahead and precision. Slow enough to follow is boring, fast enough to be busy is unreadable,
+and there is no tempo in between — the difficulty *is* the precision. Hill Climb replaces that
+with a continuous mapping (rate → speed), which is far gentler, but its optimum is *maximum* rate,
+so all-out whacking wins.
+
+Bug Hop looks for the third thing: a mapping whose optimum is a *particular* rate rather than the
+highest one. The bug crosses to the other lily pad when the stick on its own side is struck, so
+playing at all means alternating hands, and there is nothing at all to read ahead — the bug is on
+the left or it is on the right. The other stick makes it lean that way without jumping: visible,
+silent, and free, like a wrong note in Note Muncher. Mid-air taps are ignored rather than scolded,
+because the sticks do not stop just because the bug is between pads.
+
+`game/groove.ts` is the other half. Everything else in `game/` assumes the app sets the tempo and
+the player follows (`BeatGrid`, `latencyOffsetMs`, the metronome); this is the opposite, and none
+of that machinery applies. It watches inter-onset intervals and reports a **streak**: a tap whose
+spacing matches the running average extends it *however fast or slow that average is*, so a calm
+even beat earns everything that frantic whacking does not. An off-beat tap is not a failure — it
+becomes the new tempo and the streak restarts, so drifting gradually faster is allowed to succeed.
+Measured against play patterns:
+
+```
+steady 600ms (100bpm)              best streak:  19
+steady 1200ms (50bpm, slow)        best streak:  19
+steady with human jitter +-12%     best streak:  19
+all-out whacking (random 80-400)   best streak:   3
+gradual speed-up 900->500          best streak:  19
+steady then one long pause         best streak:   8
+```
+
+Rewards start at `HOP_REWARD_AT` and grow through `HOP_REWARD_TIERS` — more of them, and from a
+wider pool, the longer the beat holds. A round ends on the clock (`bugHopMinutes`, 1–6) or early
+on a long steady run (`HOP_TARGET_STREAK`), whichever comes first.
 
 ### Piano Bug
 

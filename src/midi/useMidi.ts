@@ -66,10 +66,11 @@ export function useMidi(wsUrl: string, mic: boolean) {
     return () => listeners.current.delete(fn);
   }, []);
 
-  /** For screen taps — routed through the same path as real MIDI, strike then release. */
+  /** For screen taps — routed through the same path as real MIDI, strike then
+   * release. The note matters to modes that tell one pad from another. */
   const injectHit = useCallback(
-    (velocity = 100) => {
-      const base = { note: 36, channel: 9, device: "touch", kind: "keyboard" as const };
+    (velocity = 100, note = 36) => {
+      const base = { note, channel: 9, device: "touch", kind: "keyboard" as const };
       emitHit({ ...base, perfTime: performance.now(), velocity, on: true });
       setTimeout(() => emitHit({ ...base, perfTime: performance.now(), velocity: 0, on: false }), 120);
     },

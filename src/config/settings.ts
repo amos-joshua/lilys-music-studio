@@ -25,6 +25,8 @@ export interface Settings {
   acceptAnyNote: boolean;
   drumChannelOnly: boolean;
   bridgeWsUrl: string;
+  /** Bug Hop: how long a round lasts, in minutes. */
+  bugHopMinutes: number;
   /** Sing instead of playing: the microphone becomes another note source. */
   micInput: boolean;
   /** Hill Climb: how fast upward motion dies away. Sets the drumming rate demanded. */
@@ -66,6 +68,7 @@ export const DEFAULT_SETTINGS: Settings = {
   acceptAnyNote: true,
   drumChannelOnly: false,
   bridgeWsUrl: "",
+  bugHopMinutes: 3,
   micInput: false,
   hillBrake: 0.36,
   pianoLowMidi: 48, // C3
@@ -176,6 +179,32 @@ export const PIANO_OCT_MAX = 3;
  */
 export const stickerLowMidi = (low: number, octaves: number) =>
   low + Math.round((octaves - 1) / 2) * 12;
+
+/**
+ * Steadiness detection, shared by the modes the player sets the tempo for.
+ * The tolerance is wide because the point is a beat a two-year-old can hold,
+ * not a metronome; intervals outside the range are a pause, not a beat.
+ */
+export const GROOVE_TOLERANCE = 0.3; // fraction of the running interval
+export const GROOVE_MIN_MS = 200; // faster than this is a flam, not a beat
+export const GROOVE_MAX_MS = 2500; // slower than this has lost the thread
+export const GROOVE_LERP = 0.3; // how fast the running tempo follows the player
+
+/**
+ * Bug Hop. The bug sits on one lily pad and crosses to the other when the stick
+ * on its own side is struck, so playing at all means alternating hands. Nothing
+ * demands a tempo — the reward for a steady one is the whole game, which is why
+ * the thresholds below matter more than any of the physics.
+ */
+export const HOP_MS = 260; // time in the air
+export const HOP_MIN_MINUTES = 1;
+export const HOP_MAX_MINUTES = 6;
+export const HOP_TARGET_STREAK = 20; // a long steady run ends the round early
+/** Rewards start once the beat is convincing, and grow with the streak. */
+export const HOP_REWARD_AT = 3;
+export const HOP_REWARD_TIERS = [3, 7, 12, 17];
+export const HOP_REWARD_MS = 1100;
+export const HOP_WOBBLE_MS = 320;
 
 /** Sticker opacity: the note due now, the one after it, and the rest. */
 export const STICKER_NOW = 1;

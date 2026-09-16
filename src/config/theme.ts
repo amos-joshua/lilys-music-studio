@@ -34,6 +34,9 @@ import house from "../assets/openmoji/house.svg";
 import hut from "../assets/openmoji/hut.svg";
 import tropicalFish from "../assets/openmoji/tropical-fish.svg";
 import ladybug from "../assets/openmoji/ladybug.svg";
+import balloon from "../assets/openmoji/balloon.svg";
+import heart from "../assets/openmoji/heart.svg";
+import unicorn from "../assets/openmoji/unicorn.svg";
 import { pickOther, shuffled } from "../game/random";
 
 // Piano key sticker colours (matches the stickers on Lily's piano).
@@ -95,7 +98,12 @@ export const TREAT_SETS: { id: string; name: string; items: Sprite[] }[] = [
 
 // The three-quarter boat is only ever shown still, on the mode picker card —
 // it cannot be used in play, where the hull rotates through every angle.
-export const ICONS = { sparkles, star, drum, piano, trophy, icecream, boat: isoBoatSrc, bug: ladybug };
+export const ICONS = {
+  sparkles, star, drum, piano, trophy, icecream,
+  boat: isoBoatSrc,
+  bug: ladybug,
+  lilypad: lilypadSrc,
+};
 
 export const BOAT = {
   boat: boatSrc,
@@ -104,6 +112,15 @@ export const BOAT = {
   trees: [palmTree, evergreenTree],
   houses: [house, hut],
 };
+
+/** Thrown out when a steady beat is held — pure celebration, never eaten. */
+export const REWARDS: Sprite[] = [
+  { id: "star", name: "Star", url: star },
+  { id: "sparkles", name: "Sparkles", url: sparkles },
+  { id: "heart", name: "Heart", url: heart },
+  { id: "balloon", name: "Balloon", url: balloon },
+  { id: "unicorn", name: "Unicorn", url: unicorn },
+];
 
 /** Every edible sprite, for modes that just want variety. */
 export const ALL_TREATS: Sprite[] = TREAT_SETS.flatMap((s) => s.items);

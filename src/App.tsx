@@ -4,6 +4,7 @@ import { HillClimb } from "./games/HillClimb";
 import { NoteMuncher } from "./games/NoteMuncher";
 import { BoatTrip } from "./games/BoatTrip";
 import { PianoBug } from "./games/PianoBug";
+import { BugHop } from "./games/BugHop";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { MidiMonitor } from "./components/MidiMonitor";
 import { useMidi } from "./midi/useMidi";
@@ -13,7 +14,7 @@ import type { Settings } from "./config/settings";
 import { ICONS } from "./config/theme";
 import "./App.css";
 
-type Mode = "home" | "drum" | "hill" | "staff" | "boat" | "pianobug";
+type Mode = "home" | "drum" | "hill" | "staff" | "boat" | "pianobug" | "bughop";
 
 /** Mixed mode plays these in turn, starting from whichever was opened. */
 const MIX_CYCLE: Mode[] = ["boat", "drum", "hill"];
@@ -31,6 +32,13 @@ const MODES = [
     name: "Hill Climb",
     blurb: "Drum fast to climb the hill. Stop and you slide back down.",
     icon: ICONS.icecream,
+    ready: true,
+  },
+  {
+    id: "bughop" as const,
+    name: "Bug Hop",
+    blurb: "Left, right, left, right — keep an even beat and the bug throws things.",
+    icon: ICONS.lilypad,
     ready: true,
   },
   {
@@ -143,6 +151,16 @@ export default function App() {
             onSettingsChange={patch}
             subscribe={subscribe}
             onFinish={settings.mixedMode ? () => advance("boat") : undefined}
+            onExit={() => setMode("home")}
+          />
+        )}
+
+        {mode === "bughop" && (
+          <BugHop
+            settings={settings}
+            onSettingsChange={patch}
+            subscribe={subscribe}
+            injectHit={injectHit}
             onExit={() => setMode("home")}
           />
         )}
