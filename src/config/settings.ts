@@ -179,8 +179,8 @@ export const stickerLowMidi = (low: number, octaves: number) =>
 
 /** Sticker opacity: the note due now, the one after it, and the rest. */
 export const STICKER_NOW = 1;
-export const STICKER_NEXT = 0.9;
-export const STICKER_REST = 0.6;
+export const STICKER_NEXT = 0.7;
+export const STICKER_REST = 0.4;
 
 /** Each tune is played this many times before the next one comes up. */
 export const BUG_TUNE_PLAYS = 2;
