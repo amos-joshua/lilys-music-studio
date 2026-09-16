@@ -14,6 +14,9 @@ import {
   PIANO_LOW_MIN,
   PIANO_OCT_MAX,
   PIANO_OCT_MIN,
+  STICKER_NEXT,
+  STICKER_NOW,
+  STICKER_REST,
   stickerLowMidi,
 } from "../config/settings";
 import type { Settings } from "../config/settings";
@@ -130,6 +133,19 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
     if (!step?.note) return -1;
     return fit(fit(midiFromName(step.note), stickerLow, stickerHigh), low, high);
   }, [isFree, freeTarget, steps, index, low, high, stickerLow, stickerHigh]);
+
+  /** The note after the one due, so its sticker can stand a little proud of the
+   * rest — a hint at where the bug is going without competing with where it is.
+   * Rests hold no bug, so they are stepped over. */
+  const upcoming = useMemo(() => {
+    if (isFree) return -1;
+    let i = index + 1;
+    while (i < steps.length && !steps[i].note) i++;
+    const step = steps[i];
+    if (!step?.note) return -1;
+    const midi = fit(fit(midiFromName(step.note), stickerLow, stickerHigh), low, high);
+    return midi === target ? -1 : midi;
+  }, [isFree, steps, index, low, high, stickerLow, stickerHigh, target]);
 
   const bugKey = keys.find((k) => k.midi === target);
   bugKeyRef.current = bugKey;
@@ -285,7 +301,20 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
                   }}
                 >
                   {!k.sharp && k.midi >= stickerLow && k.midi <= stickerHigh && (
-                    <span className="sticker" style={{ background: lit }} />
+                    <span
+                      className="sticker"
+                      style={{
+                        background: lit,
+                        opacity:
+                          phase !== "playing"
+                            ? STICKER_REST
+                            : k.midi === target
+                              ? STICKER_NOW
+                              : k.midi === upcoming
+                                ? STICKER_NEXT
+                                : STICKER_REST,
+                      }}
+                    />
                   )}
                 </div>
               );

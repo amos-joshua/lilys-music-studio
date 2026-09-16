@@ -134,6 +134,9 @@ splays out into a ledge that perspective then curls upward.
 
 Only the middle octave of the drawn range carries sticker tabs, matching the one octave stickered
 on Lily's piano, and the tune is folded into that octave so the bug is always on a coloured key.
+Stickers are graded while playing — `STICKER_NOW` for the note due, `STICKER_NEXT` for the one
+after it, `STICKER_REST` for everything else — so the key coming up is a hint rather than a second
+thing competing for attention. A repeated note leaves only the one sticker lit.
 The stickered octave is derived from the range rather than pinned to absolute MIDI numbers, so
 shifting the range on the start screen carries stickers, bug and targets with it.
 
