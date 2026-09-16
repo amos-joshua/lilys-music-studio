@@ -177,6 +177,10 @@ export const PIANO_OCT_MAX = 3;
 export const stickerLowMidi = (low: number, octaves: number) =>
   low + Math.round((octaves - 1) / 2) * 12;
 
+/** Each tune is played this many times before the next one comes up. */
+export const BUG_TUNE_PLAYS = 2;
+export const BUG_CHEER_MS = 2100; // the trophy, before the next round begins
+
 export const BUG_HOP_MS = 320; // travel to the next key
 export const BUG_STAR_MS = 700; // how long the star left behind lingers
 export const BUG_GUARD_MS = 90; // a controller repeating note-on must not skip two bugs

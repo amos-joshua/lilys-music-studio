@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { audio } from "../audio/AudioEngine";
-import { ICONS, NOTE_COLORS, rollAnimal } from "../config/theme";
+import { ICONS, NOTE_COLORS } from "../config/theme";
 import { FREE_PLAY, MELODIES, melodyById } from "../config/melodies";
 import type { Step } from "../config/melodies";
 import { Slider } from "../components/Slider";
 import {
+  BUG_CHEER_MS,
   BUG_GUARD_MS,
   BUG_STAR_MS,
+  BUG_TUNE_PLAYS,
   BUG_WRONG_MS,
   PIANO_LOW_MAX,
   PIANO_LOW_MIN,
@@ -60,25 +62,33 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
   const [stars, setStars] = useState<Star[]>([]);
   const [wrong, setWrong] = useState(-1);
   const [freeTarget, setFreeTarget] = useState(-1);
+  /** How many times the current tune has been finished, this visit. */
+  const [plays, setPlays] = useState(0);
 
   const phaseRef = useRef<Phase>("ready");
   const indexRef = useRef(0);
   const starId = useRef(0);
   const lastCatch = useRef(0);
   const settingsRef = useRef(settings);
+  const onSettingsChangeRef = useRef(onSettingsChange);
   const wrongTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Read inside the hit handler, which must not be rebuilt on every bug. */
   const targetRef = useRef(-1);
   const bugKeyRef = useRef<Key | undefined>(undefined);
 
   settingsRef.current = settings;
+  onSettingsChangeRef.current = onSettingsChange;
   phaseRef.current = phase;
   indexRef.current = index;
 
   const melody = useMemo(() => melodyById(settings.melodyId), [settings.melodyId]);
+  /** The tune that follows this one, wrapping; free play never moves on. */
+  const nextMelodyId = useMemo(() => {
+    const i = MELODIES.findIndex((m) => m.id === settings.melodyId);
+    return i < 0 ? settings.melodyId : MELODIES[(i + 1) % MELODIES.length].id;
+  }, [settings.melodyId]);
   const isFree = settings.melodyId === FREE_PLAY;
   const steps: Step[] = useMemo(() => melody?.steps ?? [], [melody]);
-  const [animal] = useState(() => rollAnimal(settings.animalId));
 
   useEffect(() => {
     audio.muted = !settings.sound;
@@ -131,6 +141,7 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
   const start = useCallback(() => {
     audio.resume();
     audio.muted = !settingsRef.current.sound;
+    setPlays(0);
     setIndex(0);
     setScore(0);
     setDown([]);
@@ -139,6 +150,23 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
     if (settingsRef.current.melodyId === FREE_PLAY) rollFree();
     setPhase("playing");
   }, [rollFree]);
+
+  /** The next round of the same visit: same tune or the one after it, but never
+   * back to the tune picker. */
+  const nextRound = useCallback((melodyId?: string) => {
+    // A new tune starts its own count; without this only the first tune of a
+    // session would be played twice.
+    if (melodyId) {
+      onSettingsChangeRef.current({ melodyId });
+      setPlays(0);
+    }
+    setIndex(0);
+    setScore(0);
+    setDown([]);
+    setWrong(-1);
+    setStars([]);
+    setPhase("playing");
+  }, []);
 
   /** Right key: a star pops where the bug was and it hops straight on. Nothing
    * waits on an animation, so a quick run of notes stays smooth. */
@@ -159,6 +187,7 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
       while (next < steps.length && !steps[next].note) next++;
       setIndex(next);
       if (next >= steps.length) {
+        setPlays((n) => n + 1);
         setPhase("done");
         audio.fanfare();
       }
@@ -202,6 +231,16 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
     },
     [start, caught]
   );
+
+  // Finishing a tune leads straight into the next round: the same tune until it
+  // has been played BUG_TUNE_PLAYS times, then the one after it. The trophy is
+  // the only pause, so a child never has to choose anything mid-session.
+  useEffect(() => {
+    if (phase !== "done" || isFree) return;
+    const again = plays < BUG_TUNE_PLAYS;
+    const id = setTimeout(() => nextRound(again ? undefined : nextMelodyId), BUG_CHEER_MS);
+    return () => clearTimeout(id);
+  }, [phase, isFree, plays, nextMelodyId, nextRound]);
 
   useEffect(() => subscribe(onHit), [subscribe, onHit]);
   useEffect(() => () => void (wrongTimer.current && clearTimeout(wrongTimer.current)), []);
@@ -347,15 +386,14 @@ export function PianoBug({ settings, onSettingsChange, subscribe, onExit }: Prop
           <div className="overlay">
             <img className="trophy" src={ICONS.trophy} alt="" />
             <h2>{melody?.name} — every bug!</h2>
-            <p className="hint">{animal.name} is impressed.</p>
-            <div className="row">
-              <button className="big" onClick={start}>
-                Again
-              </button>
-              <button className="big alt2" onClick={() => setPhase("ready")}>
-                Pick a tune
-              </button>
-            </div>
+            <p className="hint">
+              {plays < BUG_TUNE_PLAYS
+                ? "Once more…"
+                : `Next up: ${MELODIES.find((m) => m.id === nextMelodyId)?.name ?? ""}`}
+            </p>
+            <button className="big alt2" onClick={() => setPhase("ready")}>
+              Pick a tune
+            </button>
           </div>
         )}
       </div>

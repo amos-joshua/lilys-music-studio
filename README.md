@@ -125,6 +125,27 @@ Any octave counts by default. Wrong notes sound the pressed pitch, move the anim
 wrong height — visibly, which is the lesson — shake it, and cost nothing. Stray presses
 during a held note are ignored rather than scolded.
 
+### Piano Bug
+
+A keyboard drawn in CSS 3D — a front view tipped back, black keys raised on `translateZ` so they
+occlude correctly, and a front face hanging below each key's near edge. The face cancels the
+keyboard's tilt (`calc(-1 * var(--tilt))`); rotated a flat 90° from the key plane instead, it
+splays out into a ledge that perspective then curls upward.
+
+Only the middle octave of the drawn range carries sticker tabs, matching the one octave stickered
+on Lily's piano, and the tune is folded into that octave so the bug is always on a coloured key.
+The stickered octave is derived from the range rather than pinned to absolute MIDI numbers, so
+shifting the range on the start screen carries stickers, bug and targets with it.
+
+Finishing a tune leads straight into the next round rather than a choice: the same tune until it
+has been played `BUG_TUNE_PLAYS` times, then the one after it in `MELODIES`, wrapping. The trophy
+is the only pause. "Pick a tune" is still there for an adult, but nothing has to be chosen to keep
+playing. Free play never moves on.
+
+The bug's layer sits proud of the keys (`translateZ`) because a held key tips its front edge
+toward the viewer by more than a rem at the bug's end of the key — enough to swallow it whole.
+Stars sit between the two: above a pressed key, below the bug.
+
 ## Input
 
 `src/midi/` resolves MIDI through four sources at once; any of them can feed the game.
