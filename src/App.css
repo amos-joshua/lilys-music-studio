@@ -1473,3 +1473,122 @@ button.big.alt2 {
     opacity: 0;
   }
 }
+
+/* ---- seagull ---- */
+.skyArena {
+  background: linear-gradient(180deg, #7fc0f2 0%, #a8d8f7 55%, #d6eefc 100%);
+}
+
+.clouds {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(7rem 3rem at 18% 22%, rgba(255, 255, 255, 0.85), transparent 70%),
+    radial-gradient(9rem 3.4rem at 62% 14%, rgba(255, 255, 255, 0.7), transparent 70%),
+    radial-gradient(6rem 2.6rem at 86% 30%, rgba(255, 255, 255, 0.75), transparent 70%);
+  animation: drift2 60s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes drift2 {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-30%);
+  }
+}
+
+.skyArena .sea {
+  position: absolute;
+  border-radius: 0;
+  box-shadow: none;
+  background: linear-gradient(180deg, #3f8fd0, #2b6ea8);
+}
+
+.gullWorld {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+}
+
+.gullFruit {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0.2rem 0.3rem rgba(0, 0, 0, 0.22));
+}
+
+.gullThorn {
+  position: absolute;
+  filter: drop-shadow(0 0.2rem 0.35rem rgba(0, 0, 0, 0.28));
+}
+
+.gullPuff {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-weight: 800;
+  font-size: 2rem;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: puffUp 0.9s ease-out forwards;
+}
+
+.gullPuff.yum {
+  color: #2f7d3a;
+  text-shadow: 0 0 0.6rem rgba(255, 255, 255, 0.9);
+}
+
+.gullPuff.ouch {
+  color: #c62828;
+  text-shadow: 0 0 0.6rem rgba(255, 255, 255, 0.9);
+}
+
+@keyframes puffUp {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0;
+  }
+  25% {
+    transform: translate(-50%, -80%) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -160%) scale(1.15);
+    opacity: 0;
+  }
+}
+
+.gull {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+  z-index: 2;
+}
+
+/* The sprite flies left; the bird flies right. */
+.gull img {
+  position: absolute;
+  transform: translate(-50%, -50%) scaleX(-1);
+  filter: drop-shadow(0 0.35rem 0.5rem rgba(0, 0, 0, 0.3));
+}
+
+.gull.hurt img {
+  animation: gullHurt 0.9s ease-out;
+}
+
+@keyframes gullHurt {
+  0%,
+  100% {
+    filter: drop-shadow(0 0.35rem 0.5rem rgba(0, 0, 0, 0.3));
+  }
+  20%,
+  60% {
+    filter: drop-shadow(0 0 0.8rem rgba(230, 60, 60, 0.95)) brightness(1.15);
+  }
+}

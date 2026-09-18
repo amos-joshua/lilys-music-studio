@@ -30,6 +30,9 @@ export interface Settings {
   bugHopMs: number;
   /** Bug Hop: taps that are not the hop buzz and break the streak. */
   bugHopStrict: boolean;
+  /** Seagull: round length, and how many beats between fruit. */
+  gullMinutes: number;
+  gullFruitEvery: number;
   /** Sing instead of playing: the microphone becomes another note source. */
   micInput: boolean;
   /** Hill Climb: how fast upward motion dies away. Sets the drumming rate demanded. */
@@ -73,7 +76,9 @@ export const DEFAULT_SETTINGS: Settings = {
   bridgeWsUrl: "",
   bugHopMinutes: 3,
   bugHopMs: 340,
-  bugHopStrict: false,
+  bugHopStrict: true,
+  gullMinutes: 3,
+  gullFruitEvery: 1,
   micInput: false,
   hillBrake: 0.36,
   pianoLowMidi: 48, // C3
@@ -216,6 +221,46 @@ export const HOP_REWARD_AT = 3;
 export const HOP_REWARD_TIERS = [3, 7, 12, 17];
 export const HOP_REWARD_MS = 1100;
 export const HOP_WOBBLE_MS = 320;
+
+/**
+ * Seagull. Height is a smoothed function of how fast she is drumming, not an
+ * impulse fighting gravity: Flappy Bird's mapping is twitchy and punishing, and
+ * this one is Hill Climb's rate-to-speed turned vertical. Nothing kills the
+ * bird — a thorn bush says ouch and nudges her back toward the middle.
+ *
+ * The corridor is the point. Its height at any moment *is* a target tempo, so
+ * a flat stretch asks for a steady beat and a rise asks for a gentle
+ * acceleration. Fruit are laid one beat apart along it, which makes eating them
+ * and keeping the beat the same act and keeps their spacing self-regulating.
+ */
+export const GULL_X = 0.24; // where the bird sits across the screen
+export const GULL_SPEED = 0.33; // screen heights per second
+export const GULL_RATE_MIN = 0.55; // Hz at the bottom of the corridor (33bpm)
+export const GULL_RATE_MAX = 2.4; // Hz at the top (144bpm)
+export const GULL_RATE_LERP = 0.45; // how fast the running rate follows a tap
+export const GULL_DECAY = 1.1; // per second, once she is late for the next beat
+export const GULL_SILENCE = 1.5; // expected intervals of quiet before sinking
+export const GULL_EASE = 4; // per second, how fast the bird reaches its height
+export const GULL_LOW = 0.1;
+export const GULL_HIGH = 0.9;
+export const GULL_CATCH = 0.1;
+export const GULL_HURT_MS = 900; // ouch, and immune while it lasts
+export const GULL_HAZARD_GAP = 0.25; // above and below the corridor
+export const GULL_HAZARD_EVERY = 5; // beats
+export const GULL_MIN_MINUTES = 1;
+export const GULL_MAX_MINUTES = 6;
+export const GULL_FRUIT_EVERY_MAX = 3;
+
+/**
+ * The corridor's centre, in screen heights from the bottom, at world x. The
+ * wavelengths are deliberately short — a screen is only about 1.8 world units,
+ * and a corridor that takes fifty of them to rise and fall is a flat line on
+ * screen with no reason to ever change tempo. The main swell is about four
+ * screens, so a climb lasts ten seconds or so.
+ */
+export function gullCentre(x: number): number {
+  return 0.5 + 0.18 * Math.sin(x / 1.27) + 0.05 * Math.sin(x / 0.51 + 1.3);
+}
 
 /** Sticker opacity: the note due now, the one after it, and the rest. */
 export const STICKER_NOW = 1;

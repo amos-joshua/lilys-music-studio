@@ -37,6 +37,8 @@ import ladybug from "../assets/openmoji/ladybug.svg";
 import balloon from "../assets/openmoji/balloon.svg";
 import heart from "../assets/openmoji/heart.svg";
 import unicorn from "../assets/openmoji/unicorn.svg";
+import dove from "../assets/openmoji/dove.svg";
+import cactus from "../assets/openmoji/cactus.svg";
 import { pickOther, shuffled } from "../game/random";
 
 // Piano key sticker colours (matches the stickers on Lily's piano).
@@ -103,6 +105,8 @@ export const ICONS = {
   boat: isoBoatSrc,
   bug: ladybug,
   lilypad: lilypadSrc,
+  gull: dove,
+  thorn: cactus,
 };
 
 export const BOAT = {

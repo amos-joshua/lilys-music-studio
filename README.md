@@ -19,8 +19,9 @@ npm run build
 | **Note Muncher** — coloured bars on a treble staff, played to be eaten | playable |
 | **Piano Bug** — a bug waits on the next key of the tune; play it to send it hopping | playable |
 | **Bug Hop** — a bug crosses between two lily pads; hit the stick it is sitting on | playable |
+| **Seagull** — drum faster to fly higher; follow the fruit, mind the thorns | playable |
 
-Append `?mode=drum|hill|boat|staff|pianobug|bughop` to open straight into a mode.
+Append `?mode=drum|hill|boat|staff|pianobug|bughop|gull` to open straight into a mode.
 
 Boat Trip, Drum Jump and Hill Climb share a **mixed mode** toggle on their start screens:
 with it on, finishing a round hands over to the next of the three, starting from whichever
@@ -125,6 +126,39 @@ at 38%, and everything beyond that fades to barely visible (`barOpacity`).
 Any octave counts by default. Wrong notes sound the pressed pitch, move the animal to the
 wrong height — visibly, which is the lesson — shake it, and cost nothing. Stray presses
 during a held note are ignored rather than scolded.
+
+### Seagull
+
+Height is a smoothed function of **how fast she is drumming**, not an impulse fighting gravity.
+Flappy Bird's mapping is twitchy and punishing; this is Hill Climb's rate-to-speed turned
+vertical, so the bird eases toward a height rather than falling between taps. Stop drumming and
+it settles onto the sea, which is as bad as anything gets — nothing kills the bird, and a thorn
+bush says "ouch" and nudges her back toward the middle.
+
+The corridor is the point: **its height at any moment is a target tempo**, so a flat stretch asks
+for a steady beat and a rise asks for a gentle acceleration. Two things have to hold for that to
+work, and both were wrong first time round.
+
+`gullCentre` must vary over **a screen or two**. A screen is only ~1.8 world units, so the first
+version's ~50-unit wavelength drew a dead-flat line with no reason to ever change tempo. The main
+swell is now about four screens, or ten seconds of flight.
+
+The bird's rate→height map must be the **exact inverse** of the corridor's height→tempo map. It
+was remapping into `[GULL_LOW, GULL_HIGH]` instead, so flying at precisely the tempo the corridor
+asked for still left the bird off the fruit line.
+
+Fruit are laid one beat apart *at the tempo the corridor asks for there*, which makes eating them
+and keeping the beat the same act, and makes their spacing self-regulating rather than a density
+to tune — faster stretches pack them closer because the bird arrives sooner. Measured over 60
+world units:
+
+```
+corridor height    0.30 .. 0.74   (bird range 0.10 .. 0.90)
+target tempo         66 .. 115 bpm
+fruit on screen     avg 7.5, worst 10
+```
+
+`gullFruitEvery` thins them to every second or third beat if that still reads as busy.
 
 ### Bug Hop
 
