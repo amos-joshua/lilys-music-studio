@@ -35,6 +35,15 @@ export class Groove {
     this.best = 0;
   }
 
+  /** A tap that should not have happened: the run is over, but what it reached
+   * still stands. The next tap starts a fresh tempo rather than being measured
+   * against the one that was just broken. */
+  stumble() {
+    this.last = 0;
+    this.avg = 0;
+    this.streak = 0;
+  }
+
   tap(now: number): Tap {
     const prev = this.last;
     this.last = now;

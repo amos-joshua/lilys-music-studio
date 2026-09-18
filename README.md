@@ -158,6 +158,18 @@ gradual speed-up 900->500          best streak:  19
 steady then one long pause         best streak:   8
 ```
 
+Ignoring mid-air taps is kind, but on its own it makes **mashing the optimal strategy**: the bug
+hops the instant it lands, so the intervals come out at almost exactly the hop time — steadier
+than a two-year-old could play on purpose, and `Groove` cannot tell the difference. `bugHopStrict`
+("No extra taps") closes it by making every tap that is not the hop buzz, dim the pond and break
+the run. Simulated over 20 seconds against a 20-streak target:
+
+```
+mashing, lenient :  56     (target reached in seconds, without playing)
+mashing, strict  :   0
+real beat, strict:  21     (waits for the landing, ~900ms apart)
+```
+
 `bugHopMs` is the time in the air, and also the tempo ceiling — taps are ignored mid-hop, so a
 lazier hop makes frantic drumming physically impossible as well as unrewarding, and gives a small
 child something to pace herself against. One slider drives the crossing and the arc together

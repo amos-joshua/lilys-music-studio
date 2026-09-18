@@ -49,6 +49,7 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
   const [side, setSide] = useState<Side>(1);
   const [flying, setFlying] = useState(false);
   const [wobble, setWobble] = useState<Side | 0>(0);
+  const [scold, setScold] = useState(false);
   const [streak, setStreak] = useState(0);
   const [best, setBest] = useState(0);
   const [hops, setHops] = useState(0);
@@ -104,6 +105,7 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
     setSide(1);
     setFlying(false);
     setWobble(0);
+    setScold(false);
     setStreak(0);
     setBest(0);
     setHops(0);
@@ -124,6 +126,21 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
     }, 250);
     return () => clearInterval(id);
   }, [phase, finish]);
+
+  /**
+   * Strict mode only. Without it the optimal strategy is to mash: the bug hops
+   * the instant it lands, so the intervals come out at almost exactly the hop
+   * time — steadier than anything a two-year-old could play on purpose, and the
+   * detector cannot tell the difference. Making every tap that is not the hop
+   * cost the streak is what makes waiting for the bug the way to win.
+   */
+  const stumble = useCallback(() => {
+    groove.current.stumble();
+    setStreak(0);
+    setScold(true);
+    audio.buzz(audio.now + 0.02);
+    later(() => setScold(false), HOP_WOBBLE_MS);
+  }, [later]);
 
   /** Thrown out on landing, more of them the longer the beat has held. */
   const celebrate = useCallback(
@@ -167,7 +184,10 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
       later(() => {
         setFlying(false);
         flyingRef.current = false;
-        if (tap.streak >= HOP_REWARD_AT) celebrate((from * -1) as Side, tap.streak);
+        // Read the streak as it stands on landing, not as it was on take-off:
+        // a stumble in mid-air has to cost this hop's reward too.
+        const run = groove.current.streak;
+        if (run >= HOP_REWARD_AT) celebrate((from * -1) as Side, run);
         if (groove.current.best >= HOP_TARGET_STREAK) finish("streak");
       }, settingsRef.current.bugHopMs);
     },
@@ -184,9 +204,13 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
         if (phaseRef.current === "ready") start();
         return;
       }
-      // Mid-air taps are ignored rather than scolded: at this age the sticks do
-      // not stop just because the bug is between pads.
-      if (flyingRef.current) return;
+      // Mid-air taps: ignored by default, since at this age the sticks do not
+      // stop just because the bug is between pads. Strict mode makes them cost
+      // the streak instead, which is the only thing that rules out mashing.
+      if (flyingRef.current) {
+        if (s.bugHopStrict) stumble();
+        return;
+      }
 
       // First pad seen becomes right, the next left — the same learning the
       // boat does, since a drum cannot say which stick it is.
@@ -205,9 +229,10 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
         // penalty — the lesson is which stick, and it is made by showing it.
         setWobble(hitSide);
         later(() => setWobble(0), HOP_WOBBLE_MS);
+        if (s.bugHopStrict) stumble();
       }
     },
-    [start, hop, later]
+    [start, hop, later, stumble]
   );
 
   useEffect(() => subscribe(onHit), [subscribe, onHit]);
@@ -254,7 +279,7 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
       </div>
 
       <div
-        className="arena pondArena"
+        className={"arena pondArena" + (scold ? " scold" : "")}
         // Drives the crossing and the arc together, so one slider moves both.
         style={{ ["--hop" as string]: `${settings.bugHopMs}ms` }}
         onPointerDown={(e) => {
@@ -333,6 +358,13 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
                 valueLabel={hopPaceWord(settings.bugHopMs)}
                 onChange={(v) => onSettingsChange({ bugHopMs: HOP_MS_MIN + HOP_MS_MAX - v })}
               />
+              <button
+                className={"ghost" + (settings.bugHopStrict ? " on" : "")}
+                title="Taps that are not the hop buzz and break the streak"
+                onClick={() => onSettingsChange({ bugHopStrict: !settings.bugHopStrict })}
+              >
+                No extra taps
+              </button>
             </div>
             <button className="big" onClick={start}>
               Start
@@ -340,6 +372,7 @@ export function BugHop({ settings, onSettingsChange, subscribe, injectHit, onExi
             <p className="hint">
               Left, right, left, right. Keep an even beat — however fast or slow — and the bug
               starts throwing things.
+              {settings.bugHopStrict && " Wait for it to land: drumming in between breaks the run."}
             </p>
           </div>
         )}

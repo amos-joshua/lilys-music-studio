@@ -28,6 +28,8 @@ export interface Settings {
   /** Bug Hop: how long a round lasts, and how long the bug is in the air. */
   bugHopMinutes: number;
   bugHopMs: number;
+  /** Bug Hop: taps that are not the hop buzz and break the streak. */
+  bugHopStrict: boolean;
   /** Sing instead of playing: the microphone becomes another note source. */
   micInput: boolean;
   /** Hill Climb: how fast upward motion dies away. Sets the drumming rate demanded. */
@@ -71,6 +73,7 @@ export const DEFAULT_SETTINGS: Settings = {
   bridgeWsUrl: "",
   bugHopMinutes: 3,
   bugHopMs: 340,
+  bugHopStrict: false,
   micInput: false,
   hillBrake: 0.36,
   pianoLowMidi: 48, // C3

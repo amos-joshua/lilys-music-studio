@@ -1339,6 +1339,21 @@ button.big.alt2 {
     radial-gradient(120% 90% at 50% 15%, #5aa9df 0%, #3576b0 55%, #245a92 100%);
 }
 
+/* A tap that broke the run: brief, dim, and over. */
+.pondArena.scold {
+  animation: scoldFlash 320ms ease-out;
+}
+
+@keyframes scoldFlash {
+  0%,
+  100% {
+    filter: none;
+  }
+  40% {
+    filter: saturate(0.45) brightness(0.78);
+  }
+}
+
 .clock {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
